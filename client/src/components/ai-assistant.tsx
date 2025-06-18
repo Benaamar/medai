@@ -241,19 +241,35 @@ export default function AiAssistant({ onViewSummary }: AiAssistantProps) {
           <h3 className="text-md font-semibold text-slate-900">Actions Rapides</h3>
         </CardHeader>
         <CardContent className="p-4 space-y-3">
-          <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-slate-700 hover:bg-slate-50"
+            onClick={() => setIsPrescriptionModalOpen(true)}
+          >
             <Pill className="text-medical-green mr-3 h-4 w-4" />
             Nouvelle ordonnance
           </Button>
-          <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-slate-700 hover:bg-slate-50"
+            onClick={() => setIsAppointmentModalOpen(true)}
+          >
             <Calendar className="text-medical-blue mr-3 h-4 w-4" />
             Planifier RDV
           </Button>
-          <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-slate-700 hover:bg-slate-50"
+            onClick={() => setIsPatientModalOpen(true)}
+          >
             <UserPlus className="text-purple-600 mr-3 h-4 w-4" />
             Nouveau patient
           </Button>
-          <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-slate-700 hover:bg-slate-50"
+            onClick={() => setIsCertificateModalOpen(true)}
+          >
             <FileCheck className="text-medical-amber mr-3 h-4 w-4" />
             Certificat médical
           </Button>

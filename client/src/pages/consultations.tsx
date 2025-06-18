@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, Calendar, Clock, User, FileText, Filter, Search } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Plus, Calendar, Clock, User, FileText, Filter, Search, Edit, Trash2 } from "lucide-react";
 import Header from "@/components/header";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ConsultationWithPatient } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import ConsultationFormModal from "@/components/consultation-form-modal";
+import type { ConsultationWithPatient, Consultation } from "@shared/schema";
 
 export default function Consultations() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedConsultation, setSelectedConsultation] = useState<Consultation | undefined>(undefined);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const { toast } = useToast();
 
   const { data: consultations, isLoading } = useQuery<ConsultationWithPatient[]>({
     queryKey: ["/api/consultations/today"],
@@ -51,6 +58,46 @@ export default function Consultations() {
     
     return matchesSearch && matchesStatus;
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/consultations/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Consultation supprimée",
+        description: "La consultation a été supprimée avec succès.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/consultations/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/consultations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la consultation.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateConsultation = () => {
+    setSelectedConsultation(undefined);
+    setFormMode("create");
+    setIsFormOpen(true);
+  };
+
+  const handleEditConsultation = (consultation: ConsultationWithPatient) => {
+    setSelectedConsultation(consultation);
+    setFormMode("edit");
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteConsultation = (consultation: ConsultationWithPatient) => {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer la consultation de ${consultation.patient.firstName} ${consultation.patient.lastName} ?`)) {
+      deleteMutation.mutate(consultation.id);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -100,7 +147,10 @@ export default function Consultations() {
               {consultations?.length || 0} consultation{(consultations?.length || 0) > 1 ? 's' : ''} programmée{(consultations?.length || 0) > 1 ? 's' : ''} aujourd'hui
             </p>
           </div>
-          <Button className="bg-medical-blue text-white hover:bg-blue-700">
+          <Button 
+            onClick={handleCreateConsultation}
+            className="bg-medical-blue text-white hover:bg-blue-700"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Nouvelle Consultation
           </Button>
@@ -189,6 +239,23 @@ export default function Consultations() {
                             <FileText className="h-4 w-4 mr-2" />
                             Détails
                           </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditConsultation(consultation)}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Modifier
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteConsultation(consultation)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Supprimer
+                          </Button>
                           {consultation.status === "scheduled" && (
                             <Button size="sm" className="bg-medical-green text-white hover:bg-green-700">
                               Commencer
@@ -224,7 +291,10 @@ export default function Consultations() {
                     : "Commencez par programmer une nouvelle consultation"
                   }
                 </p>
-                <Button className="bg-medical-blue text-white hover:bg-blue-700">
+                <Button 
+                  onClick={handleCreateConsultation}
+                  className="bg-medical-blue text-white hover:bg-blue-700"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Nouvelle Consultation
                 </Button>
@@ -232,6 +302,13 @@ export default function Consultations() {
             </Card>
           )}
         </div>
+
+        <ConsultationFormModal
+          isOpen={isFormOpen}
+          onClose={() => setIsFormOpen(false)}
+          consultation={selectedConsultation}
+          mode={formMode}
+        />
       </div>
     </div>
   );
