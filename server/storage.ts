@@ -5,6 +5,8 @@ import {
   type Consultation, type InsertConsultation, type ConsultationWithPatient,
   type AiSummary, type InsertAiSummary, type AiSummaryWithDetails
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -59,9 +61,6 @@ export class MemStorage implements IStorage {
     this.currentPatientId = 1;
     this.currentConsultationId = 1;
     this.currentAiSummaryId = 1;
-
-    // Initialize with sample data
-    this.initializeSampleData();
   }
 
   private async initializeSampleData() {
@@ -471,4 +470,164 @@ Dr. Marie DUBOIS`
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getPatient(id: number): Promise<Patient | undefined> {
+    const [patient] = await db.select().from(patients).where(eq(patients.id, id));
+    return patient || undefined;
+  }
+
+  async getAllPatients(): Promise<Patient[]> {
+    return await db.select().from(patients);
+  }
+
+  async createPatient(insertPatient: InsertPatient): Promise<Patient> {
+    const [patient] = await db
+      .insert(patients)
+      .values(insertPatient)
+      .returning();
+    return patient;
+  }
+
+  async updatePatient(id: number, patientUpdate: Partial<InsertPatient>): Promise<Patient | undefined> {
+    const [patient] = await db
+      .update(patients)
+      .set(patientUpdate)
+      .where(eq(patients.id, id))
+      .returning();
+    return patient || undefined;
+  }
+
+  async getConsultation(id: number): Promise<Consultation | undefined> {
+    const [consultation] = await db.select().from(consultations).where(eq(consultations.id, id));
+    return consultation || undefined;
+  }
+
+  async getConsultationsByDate(date: string): Promise<ConsultationWithPatient[]> {
+    const results = await db
+      .select({
+        consultation: consultations,
+        patient: patients
+      })
+      .from(consultations)
+      .innerJoin(patients, eq(consultations.patientId, patients.id))
+      .where(eq(consultations.date, date))
+      .orderBy(consultations.time);
+
+    return results.map(result => ({
+      ...result.consultation,
+      patient: result.patient
+    }));
+  }
+
+  async getConsultationsByPatient(patientId: number): Promise<Consultation[]> {
+    return await db.select().from(consultations).where(eq(consultations.patientId, patientId));
+  }
+
+  async createConsultation(insertConsultation: InsertConsultation): Promise<Consultation> {
+    const [consultation] = await db
+      .insert(consultations)
+      .values(insertConsultation)
+      .returning();
+    return consultation;
+  }
+
+  async updateConsultation(id: number, consultationUpdate: Partial<InsertConsultation>): Promise<Consultation | undefined> {
+    const [consultation] = await db
+      .update(consultations)
+      .set(consultationUpdate)
+      .where(eq(consultations.id, id))
+      .returning();
+    return consultation || undefined;
+  }
+
+  async getAiSummary(id: number): Promise<AiSummary | undefined> {
+    const [summary] = await db.select().from(aiSummaries).where(eq(aiSummaries.id, id));
+    return summary || undefined;
+  }
+
+  async getAiSummariesByPatient(patientId: number): Promise<AiSummaryWithDetails[]> {
+    const results = await db
+      .select({
+        summary: aiSummaries,
+        patient: patients,
+        consultation: consultations
+      })
+      .from(aiSummaries)
+      .innerJoin(patients, eq(aiSummaries.patientId, patients.id))
+      .innerJoin(consultations, eq(aiSummaries.consultationId, consultations.id))
+      .where(eq(aiSummaries.patientId, patientId));
+
+    return results.map(result => ({
+      ...result.summary,
+      patient: result.patient,
+      consultation: result.consultation
+    }));
+  }
+
+  async getRecentAiSummaries(limit: number = 10): Promise<AiSummaryWithDetails[]> {
+    const results = await db
+      .select({
+        summary: aiSummaries,
+        patient: patients,
+        consultation: consultations
+      })
+      .from(aiSummaries)
+      .innerJoin(patients, eq(aiSummaries.patientId, patients.id))
+      .innerJoin(consultations, eq(aiSummaries.consultationId, consultations.id))
+      .orderBy(aiSummaries.generatedAt)
+      .limit(limit);
+
+    return results.map(result => ({
+      ...result.summary,
+      patient: result.patient,
+      consultation: result.consultation
+    }));
+  }
+
+  async createAiSummary(insertSummary: InsertAiSummary): Promise<AiSummary> {
+    const [summary] = await db
+      .insert(aiSummaries)
+      .values(insertSummary)
+      .returning();
+    return summary;
+  }
+
+  async getDashboardStats(): Promise<{
+    todayConsultations: number;
+    waitingPatients: number;
+    completedConsultations: number;
+    aiSummaries: number;
+  }> {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const todayConsultations = await db.select().from(consultations).where(eq(consultations.date, today));
+    const totalSummaries = await db.select().from(aiSummaries);
+
+    return {
+      todayConsultations: todayConsultations.length,
+      waitingPatients: todayConsultations.filter(c => c.status === 'scheduled').length,
+      completedConsultations: todayConsultations.filter(c => c.status === 'completed').length,
+      aiSummaries: totalSummaries.length,
+    };
+  }
+}
+
+export const storage = new DatabaseStorage();
