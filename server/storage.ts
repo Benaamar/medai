@@ -12,26 +12,35 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
 
   // Patient methods
   getPatient(id: number): Promise<Patient | undefined>;
   getAllPatients(): Promise<Patient[]>;
   createPatient(patient: InsertPatient): Promise<Patient>;
   updatePatient(id: number, patient: Partial<InsertPatient>): Promise<Patient | undefined>;
+  deletePatient(id: number): Promise<boolean>;
 
   // Consultation methods
   getConsultation(id: number): Promise<Consultation | undefined>;
+  getAllConsultations(): Promise<ConsultationWithPatient[]>;
   getConsultationsByDate(date: string): Promise<ConsultationWithPatient[]>;
   getConsultationsByPatient(patientId: number): Promise<Consultation[]>;
   createConsultation(consultation: InsertConsultation): Promise<Consultation>;
   updateConsultation(id: number, consultation: Partial<InsertConsultation>): Promise<Consultation | undefined>;
+  deleteConsultation(id: number): Promise<boolean>;
 
   // AI Summary methods
   getAiSummary(id: number): Promise<AiSummary | undefined>;
+  getAiSummaryWithDetails(id: number): Promise<AiSummaryWithDetails | undefined>;
   getAiSummariesByPatient(patientId: number): Promise<AiSummaryWithDetails[]>;
   getRecentAiSummaries(limit?: number): Promise<AiSummaryWithDetails[]>;
   createAiSummary(summary: InsertAiSummary): Promise<AiSummary>;
+  updateAiSummary(id: number, summary: Partial<InsertAiSummary>): Promise<AiSummary | undefined>;
+  deleteAiSummary(id: number): Promise<boolean>;
 
   // Statistics
   getDashboardStats(): Promise<{
@@ -347,6 +356,74 @@ Dr. Marie DUBOIS`
     return updatedPatient;
   }
 
+  async deletePatient(id: number): Promise<boolean> {
+    return this.patients.delete(id);
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateUser(id: number, userUpdate: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, ...userUpdate };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    return this.users.delete(id);
+  }
+
+  async getAllConsultations(): Promise<ConsultationWithPatient[]> {
+    const consultations = Array.from(this.consultations.values());
+    const consultationsWithPatient: ConsultationWithPatient[] = [];
+    
+    for (const consultation of consultations) {
+      const patient = await this.getPatient(consultation.patientId);
+      if (patient) {
+        consultationsWithPatient.push({ ...consultation, patient });
+      }
+    }
+    
+    return consultationsWithPatient.sort((a, b) => {
+      const dateComparison = a.date.localeCompare(b.date);
+      if (dateComparison !== 0) return dateComparison;
+      return a.time.localeCompare(b.time);
+    });
+  }
+
+  async deleteConsultation(id: number): Promise<boolean> {
+    return this.consultations.delete(id);
+  }
+
+  async getAiSummaryWithDetails(id: number): Promise<AiSummaryWithDetails | undefined> {
+    const summary = this.aiSummaries.get(id);
+    if (!summary) return undefined;
+    
+    const patient = await this.getPatient(summary.patientId);
+    const consultation = await this.getConsultation(summary.consultationId);
+    
+    if (!patient || !consultation) return undefined;
+    
+    return { ...summary, patient, consultation };
+  }
+
+  async updateAiSummary(id: number, summaryUpdate: Partial<InsertAiSummary>): Promise<AiSummary | undefined> {
+    const summary = this.aiSummaries.get(id);
+    if (!summary) return undefined;
+    
+    const updatedSummary = { ...summary, ...summaryUpdate };
+    this.aiSummaries.set(id, updatedSummary);
+    return updatedSummary;
+  }
+
+  async deleteAiSummary(id: number): Promise<boolean> {
+    return this.aiSummaries.delete(id);
+  }
+
   // Consultation methods
   async getConsultation(id: number): Promise<Consultation | undefined> {
     return this.consultations.get(id);
@@ -481,12 +558,30 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async updateUser(id: number, userUpdate: Partial<InsertUser>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(userUpdate)
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id));
+    return result.rowCount > 0;
   }
 
   async getPatient(id: number): Promise<Patient | undefined> {
@@ -515,9 +610,30 @@ export class DatabaseStorage implements IStorage {
     return patient || undefined;
   }
 
+  async deletePatient(id: number): Promise<boolean> {
+    const result = await db.delete(patients).where(eq(patients.id, id));
+    return result.rowCount > 0;
+  }
+
   async getConsultation(id: number): Promise<Consultation | undefined> {
     const [consultation] = await db.select().from(consultations).where(eq(consultations.id, id));
     return consultation || undefined;
+  }
+
+  async getAllConsultations(): Promise<ConsultationWithPatient[]> {
+    const results = await db
+      .select({
+        consultation: consultations,
+        patient: patients
+      })
+      .from(consultations)
+      .innerJoin(patients, eq(consultations.patientId, patients.id))
+      .orderBy(consultations.date, consultations.time);
+
+    return results.map(result => ({
+      ...result.consultation,
+      patient: result.patient
+    }));
   }
 
   async getConsultationsByDate(date: string): Promise<ConsultationWithPatient[]> {
@@ -558,9 +674,35 @@ export class DatabaseStorage implements IStorage {
     return consultation || undefined;
   }
 
+  async deleteConsultation(id: number): Promise<boolean> {
+    const result = await db.delete(consultations).where(eq(consultations.id, id));
+    return result.rowCount > 0;
+  }
+
   async getAiSummary(id: number): Promise<AiSummary | undefined> {
     const [summary] = await db.select().from(aiSummaries).where(eq(aiSummaries.id, id));
     return summary || undefined;
+  }
+
+  async getAiSummaryWithDetails(id: number): Promise<AiSummaryWithDetails | undefined> {
+    const [result] = await db
+      .select({
+        summary: aiSummaries,
+        patient: patients,
+        consultation: consultations
+      })
+      .from(aiSummaries)
+      .innerJoin(patients, eq(aiSummaries.patientId, patients.id))
+      .innerJoin(consultations, eq(aiSummaries.consultationId, consultations.id))
+      .where(eq(aiSummaries.id, id));
+
+    if (!result) return undefined;
+
+    return {
+      ...result.summary,
+      patient: result.patient,
+      consultation: result.consultation
+    };
   }
 
   async getAiSummariesByPatient(patientId: number): Promise<AiSummaryWithDetails[]> {
@@ -608,6 +750,20 @@ export class DatabaseStorage implements IStorage {
       .values(insertSummary)
       .returning();
     return summary;
+  }
+
+  async updateAiSummary(id: number, summaryUpdate: Partial<InsertAiSummary>): Promise<AiSummary | undefined> {
+    const [summary] = await db
+      .update(aiSummaries)
+      .set(summaryUpdate)
+      .where(eq(aiSummaries.id, id))
+      .returning();
+    return summary || undefined;
+  }
+
+  async deleteAiSummary(id: number): Promise<boolean> {
+    const result = await db.delete(aiSummaries).where(eq(aiSummaries.id, id));
+    return result.rowCount > 0;
   }
 
   async getDashboardStats(): Promise<{
