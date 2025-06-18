@@ -581,7 +581,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: number): Promise<boolean> {
     const result = await db.delete(users).where(eq(users.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getPatient(id: number): Promise<Patient | undefined> {
@@ -612,7 +612,7 @@ export class DatabaseStorage implements IStorage {
 
   async deletePatient(id: number): Promise<boolean> {
     const result = await db.delete(patients).where(eq(patients.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getConsultation(id: number): Promise<Consultation | undefined> {
@@ -676,7 +676,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteConsultation(id: number): Promise<boolean> {
     const result = await db.delete(consultations).where(eq(consultations.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getAiSummary(id: number): Promise<AiSummary | undefined> {
@@ -763,7 +763,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAiSummary(id: number): Promise<boolean> {
     const result = await db.delete(aiSummaries).where(eq(aiSummaries.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getDashboardStats(): Promise<{

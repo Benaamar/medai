@@ -1,16 +1,23 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, Search, Phone, Mail, MapPin, Calendar, Edit, Eye } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Plus, Search, Phone, Mail, MapPin, Calendar, Edit, Eye, Trash2 } from "lucide-react";
 import Header from "@/components/header";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import PatientFormModal from "@/components/patient-form-modal";
 import type { Patient } from "@shared/schema";
 
 export default function Patients() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | undefined>(undefined);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const { toast } = useToast();
 
   const { data: patients, isLoading } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
@@ -34,6 +41,44 @@ export default function Patients() {
     patient.phone?.includes(searchTerm) ||
     patient.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/patients/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Patient supprimé",
+        description: "Le patient a été supprimé avec succès.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le patient.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreatePatient = () => {
+    setSelectedPatient(undefined);
+    setFormMode("create");
+    setIsFormOpen(true);
+  };
+
+  const handleEditPatient = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setFormMode("edit");
+    setIsFormOpen(true);
+  };
+
+  const handleDeletePatient = (patient: Patient) => {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer le patient ${patient.firstName} ${patient.lastName} ?`)) {
+      deleteMutation.mutate(patient.id);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -83,7 +128,10 @@ export default function Patients() {
               {patients?.length || 0} patient{(patients?.length || 0) > 1 ? 's' : ''} enregistré{(patients?.length || 0) > 1 ? 's' : ''}
             </p>
           </div>
-          <Button className="bg-medical-blue text-white hover:bg-blue-700">
+          <Button 
+            onClick={handleCreatePatient}
+            className="bg-medical-blue text-white hover:bg-blue-700"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Nouveau Patient
           </Button>
@@ -155,9 +203,22 @@ export default function Patients() {
                           <Eye className="h-4 w-4 mr-2" />
                           Voir
                         </Button>
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleEditPatient(patient)}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
                           Modifier
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeletePatient(patient)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -179,13 +240,23 @@ export default function Patients() {
                   : "Commencez par ajouter votre premier patient"
                 }
               </p>
-              <Button className="bg-medical-blue text-white hover:bg-blue-700">
+              <Button 
+                onClick={handleCreatePatient}
+                className="bg-medical-blue text-white hover:bg-blue-700"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Nouveau Patient
               </Button>
             </div>
           )}
         </div>
+
+        <PatientFormModal
+          isOpen={isFormOpen}
+          onClose={() => setIsFormOpen(false)}
+          patient={selectedPatient}
+          mode={formMode}
+        />
       </div>
     </div>
   );
