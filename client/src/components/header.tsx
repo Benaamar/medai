@@ -1,5 +1,23 @@
 import { Stethoscope, Bell } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
+
+function NavLink({ href, label }: { href: string; label: string }) {
+  const [location] = useLocation();
+  const isActive = location === href;
+  
+  return (
+    <Link href={href}>
+      <a className={`px-1 pt-1 pb-4 text-sm font-medium transition-colors ${
+        isActive 
+          ? "text-medical-blue border-b-2 border-medical-blue" 
+          : "text-slate-500 hover:text-slate-700"
+      }`}>
+        {label}
+      </a>
+    </Link>
+  );
+}
 
 export default function Header() {
   return (
@@ -12,18 +30,10 @@ export default function Header() {
               <h1 className="text-xl font-bold text-slate-900">MediAssist</h1>
             </div>
             <nav className="hidden md:ml-8 md:flex md:space-x-8">
-              <a href="#" className="text-medical-blue border-b-2 border-medical-blue px-1 pt-1 pb-4 text-sm font-medium">
-                Tableau de Bord
-              </a>
-              <a href="#" className="text-slate-500 hover:text-slate-700 px-1 pt-1 pb-4 text-sm font-medium">
-                Patients
-              </a>
-              <a href="#" className="text-slate-500 hover:text-slate-700 px-1 pt-1 pb-4 text-sm font-medium">
-                Consultations
-              </a>
-              <a href="#" className="text-slate-500 hover:text-slate-700 px-1 pt-1 pb-4 text-sm font-medium">
-                Assistant IA
-              </a>
+              <NavLink href="/" label="Tableau de Bord" />
+              <NavLink href="/patients" label="Patients" />
+              <NavLink href="/consultations" label="Consultations" />
+              <NavLink href="/assistant-ia" label="Assistant IA" />
             </nav>
           </div>
           <div className="flex items-center space-x-4">

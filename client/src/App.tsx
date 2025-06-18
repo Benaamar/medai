@@ -4,12 +4,18 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
+import Patients from "@/pages/patients";
+import Consultations from "@/pages/consultations";
+import AiAssistant from "@/pages/ai-assistant";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/patients" component={Patients} />
+      <Route path="/consultations" component={Consultations} />
+      <Route path="/assistant-ia" component={AiAssistant} />
       <Route component={NotFound} />
     </Switch>
   );
