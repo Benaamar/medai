@@ -3,6 +3,13 @@ import { users, patients, consultations, aiSummaries } from "@shared/schema";
 
 export async function seedDatabase() {
   try {
+    // Check if data already exists
+    const existingUsers = await db.select().from(users);
+    if (existingUsers.length > 0) {
+      console.log("Database already seeded, skipping...");
+      return true;
+    }
+
     // Create sample doctor
     const [doctor] = await db
       .insert(users)

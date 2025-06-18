@@ -592,7 +592,7 @@ export class DatabaseStorage implements IStorage {
       .from(aiSummaries)
       .innerJoin(patients, eq(aiSummaries.patientId, patients.id))
       .innerJoin(consultations, eq(aiSummaries.consultationId, consultations.id))
-      .orderBy(aiSummaries.generatedAt)
+      .orderBy(aiSummaries.id)
       .limit(limit);
 
     return results.map(result => ({
