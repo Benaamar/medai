@@ -9,6 +9,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import AiSummaryModal from "@/components/ai-summary-modal";
+import PrescriptionFormModal from "@/components/prescription-form-modal";
+import AppointmentFormModal from "@/components/appointment-form-modal";
+import PatientFormModal from "@/components/patient-form-modal";
+import MedicalCertificateModal from "@/components/medical-certificate-modal";
 import type { ConsultationWithPatient, AiSummaryWithDetails } from "@shared/schema";
 
 interface AiAssistantProps {
@@ -23,6 +28,17 @@ interface AiAssistantProps {
 export default function AiAssistant({ onViewSummary }: AiAssistantProps) {
   const [selectedConsultation, setSelectedConsultation] = useState<string>("");
   const [summaryType, setSummaryType] = useState<string>("consultation");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [selectedSummary, setSelectedSummary] = useState<{
+    content: string;
+    patientName: string;
+    consultationDate: string;
+    type: string;
+  } | null>(null);
+  const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
+  const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: consultations, isLoading: consultationsLoading } = useQuery<ConsultationWithPatient[]>({
@@ -275,6 +291,34 @@ export default function AiAssistant({ onViewSummary }: AiAssistantProps) {
           </Button>
         </CardContent>
       </Card>
+
+      {selectedSummary && (
+        <AiSummaryModal
+          summary={selectedSummary}
+          onClose={() => setSelectedSummary(null)}
+        />
+      )}
+
+      <PrescriptionFormModal
+        isOpen={isPrescriptionModalOpen}
+        onClose={() => setIsPrescriptionModalOpen(false)}
+      />
+
+      <AppointmentFormModal
+        isOpen={isAppointmentModalOpen}
+        onClose={() => setIsAppointmentModalOpen(false)}
+      />
+
+      <PatientFormModal
+        isOpen={isPatientModalOpen}
+        onClose={() => setIsPatientModalOpen(false)}
+        mode="create"
+      />
+
+      <MedicalCertificateModal
+        isOpen={isCertificateModalOpen}
+        onClose={() => setIsCertificateModalOpen(false)}
+      />
     </div>
   );
 }
