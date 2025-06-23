@@ -21,7 +21,7 @@ export const generatePDF = async (data: DocumentData) => {
   try {
     // Créer un élément temporaire avec le contenu HTML
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = generateHTMLDocument(data);
+    tempDiv.innerHTML = generateHTMLDocument(escapeDocumentData(data));
     tempDiv.style.position = 'absolute';
     tempDiv.style.left = '-9999px';
     tempDiv.style.width = '794px'; // Largeur A4 en pixels (210mm)
@@ -86,7 +86,7 @@ export const generatePDFPrint = (data: DocumentData) => {
     return false;
   }
 
-  const htmlContent = generateHTMLDocument(data);
+  const htmlContent = generateHTMLDocument(escapeDocumentData(data));
   
   printWindow.document.write(htmlContent);
   printWindow.document.close();
@@ -113,7 +113,7 @@ export const printDocument = (data: DocumentData) => {
     return;
   }
 
-  const htmlContent = generateHTMLDocument(data);
+  const htmlContent = generateHTMLDocument(escapeDocumentData(data));
   
   printWindow.document.write(htmlContent);
   printWindow.document.close();
@@ -141,6 +141,33 @@ export const downloadAsText = (data: DocumentData) => {
   document.body.removeChild(link);
   
   URL.revokeObjectURL(url);
+};
+
+// Fonction de sécurisation des données pour éviter les injections XSS
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
+// Fonction pour échapper toutes les données utilisateur dans DocumentData
+const escapeDocumentData = (data: DocumentData): DocumentData => {
+  return {
+    ...data,
+    content: escapeHtml(data.content),
+    patientName: escapeHtml(data.patientName),
+    date: escapeHtml(data.date),
+    doctorName: data.doctorName ? escapeHtml(data.doctorName) : data.doctorName,
+    clinicInfo: data.clinicInfo ? {
+      name: escapeHtml(data.clinicInfo.name),
+      address: escapeHtml(data.clinicInfo.address),
+      phone: escapeHtml(data.clinicInfo.phone),
+      email: escapeHtml(data.clinicInfo.email)
+    } : data.clinicInfo
+  };
 };
 
 // Génération du contenu HTML pour l'impression/PDF
