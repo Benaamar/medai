@@ -13,8 +13,8 @@ interface AnthropicResponse {
   };
 }
 
-// Utiliser une clé API en dur pour les tests
-const apiKey = "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";
+// Utiliser la clé API depuis les variables d'environnement
+const apiKey = process.env.ANTHROPIC_API_KEY;
 console.log("Clé API utilisée:", apiKey ? `${apiKey.substring(0, 10)}...` : "non définie");
 
 async function testAnthropic() {

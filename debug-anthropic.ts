@@ -3,7 +3,7 @@ import { config } from 'dotenv';
 
 config();
 
-const apiKey = process.env.ANTHROPIC_API_KEY || "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";
+const apiKey = process.env.ANTHROPIC_API_KEY;
 
 // Interface pour la réponse de l'API Anthropic
 interface AnthropicResponse {
