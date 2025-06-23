@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
+import FloatingChatButton from "@/components/floating-chat-button";
 
 export default function NotFound() {
   return (
@@ -16,6 +17,13 @@ export default function NotFound() {
           </p>
         </CardContent>
       </Card>
+      
+      {/* Floating Chat */}
+      <FloatingChatButton
+        gradientColors="from-red-600 to-red-700"
+        focusColor="red-500"
+        shadowColor="red-500/25"
+      />
     </div>
   );
 }

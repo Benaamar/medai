@@ -1,15 +1,32 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, ChevronRight } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "./ui/card";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { Skeleton } from "./ui/skeleton";
+import ConsultationFormModal from "./consultation-form-modal";
+import PatientDetailsModal from "./patient-details-modal";
 import type { ConsultationWithPatient } from "@shared/schema";
 
 export default function ConsultationsList() {
-  const { data: consultations, isLoading } = useQuery<ConsultationWithPatient[]>({
-    queryKey: ["/api/consultations/today"],
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedConsultation, setSelectedConsultation] = useState<ConsultationWithPatient | undefined>(undefined);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  
+  const { data: consultations, isLoading, error } = useQuery<ConsultationWithPatient[]>({
+    queryKey: ["/api/consultations"],
   });
+  
+  const openConsultationForm = (consultation?: ConsultationWithPatient) => {
+    setSelectedConsultation(consultation);
+    setIsFormOpen(true);
+  };
+
+  const openDetailsModal = (consultation: ConsultationWithPatient) => {
+    setSelectedConsultation(consultation);
+    setDetailsOpen(true);
+  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -80,62 +97,98 @@ export default function ConsultationsList() {
   }
 
   return (
-    <Card className="border border-slate-200">
-      <CardHeader className="px-6 py-4 border-b border-slate-200">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Consultations du Jour</h2>
-          <Button className="bg-medical-blue text-white hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Nouvelle Consultation
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="divide-y divide-slate-200">
-          {consultations && consultations.length > 0 ? (
-            consultations.map((consultation) => {
-              const initials = `${consultation.patient.firstName[0]}${consultation.patient.lastName[0]}`.toUpperCase();
-              const age = calculateAge(consultation.patient.birthDate);
-              
-              return (
-                <div key={consultation.id} className="p-6 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        <div className="h-10 w-10 bg-slate-200 rounded-full flex items-center justify-center">
-                          <span className="text-slate-600 font-medium text-sm">{initials}</span>
+    <>
+      <ConsultationFormModal 
+        isOpen={isFormOpen} 
+        onClose={() => {
+          setIsFormOpen(false);
+          setSelectedConsultation(undefined);
+        }} 
+        mode={selectedConsultation ? "edit" : "create"} 
+        consultation={selectedConsultation}
+      />
+      
+      <Card className="border border-slate-200">
+        <CardHeader className="px-6 py-4 border-b border-slate-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">Consultations du Jour</h2>
+            <Button 
+              className="bg-medical-blue text-white hover:bg-blue-700"
+              onClick={() => openConsultationForm()}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nouvelle Consultation
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y divide-slate-200">
+            {consultations && consultations.length > 0 ? (
+              consultations.map((consultation) => {
+                const initials = `${consultation.patient.firstName[0]}${consultation.patient.lastName[0]}`.toUpperCase();
+                const age = calculateAge(consultation.patient.birthDate);
+                
+                return (
+                  <div key={consultation.id} className="p-6 hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-shrink-0">
+                          <div className="h-10 w-10 bg-slate-200 rounded-full flex items-center justify-center">
+                            <span className="text-slate-600 font-medium text-sm">{initials}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-semibold text-slate-900">
+                            {consultation.patient.firstName} {consultation.patient.lastName}
+                          </h3>
+                          <p className="text-sm text-slate-500">
+                            Né(e) le {new Date(consultation.patient.birthDate).toLocaleDateString('fr-FR')} ({age} ans)
+                          </p>
+                          <p className="text-xs text-slate-400">{consultation.reason}</p>
                         </div>
                       </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-slate-900">
-                          {consultation.patient.firstName} {consultation.patient.lastName}
-                        </h3>
-                        <p className="text-sm text-slate-500">
-                          Né(e) le {new Date(consultation.patient.birthDate).toLocaleDateString('fr-FR')} ({age} ans)
-                        </p>
-                        <p className="text-xs text-slate-400">{consultation.reason}</p>
+                      <div className="text-right">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="text-sm font-medium text-slate-900">{consultation.time}</span>
+                          {getStatusBadge(consultation.status)}
+                        </div>
+                        {consultation.status === "completed" ? (
+                          <button
+                            className="text-medical-blue hover:text-blue-700 text-sm font-medium"
+                            onClick={() => openDetailsModal(consultation)}
+                          >
+                            Voir détails <ChevronRight className="inline h-3 w-3 ml-1" />
+                          </button>
+                        ) : (
+                          <button
+                            className="text-medical-blue hover:text-blue-700 text-sm font-medium"
+                            onClick={() => openConsultationForm(consultation)}
+                          >
+                            {getStatusAction(consultation.status)} <ChevronRight className="inline h-3 w-3 ml-1" />
+                          </button>
+                        )}
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <span className="text-sm font-medium text-slate-900">{consultation.time}</span>
-                        {getStatusBadge(consultation.status)}
-                      </div>
-                      <button className="text-medical-blue hover:text-blue-700 text-sm font-medium">
-                        {getStatusAction(consultation.status)} <ChevronRight className="inline h-3 w-3 ml-1" />
-                      </button>
                     </div>
                   </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="p-6 text-center text-slate-500">
-              <p>Aucune consultation programmée pour aujourd'hui</p>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+                );
+              })
+            ) : (
+              <div className="p-6 text-center text-slate-500">
+                <p>Aucune consultation programmée pour aujourd'hui</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      
+      {selectedConsultation && (
+        <PatientDetailsModal
+          isOpen={detailsOpen}
+          onClose={() => setDetailsOpen(false)}
+          patientId={selectedConsultation.patient.id}
+          patientName={`${selectedConsultation.patient.firstName} ${selectedConsultation.patient.lastName}`}
+        />
+      )}
+    </>
   );
 }

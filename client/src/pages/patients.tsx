@@ -1,25 +1,32 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Search, Phone, Mail, MapPin, Calendar, Edit, Eye, Trash2 } from "lucide-react";
-import Header from "@/components/header";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import PatientFormModal from "@/components/patient-form-modal";
+import { Plus, Phone, Mail, MapPin, Calendar as CalendarIcon, Edit, Eye, Trash2, Users, Sparkles, X } from "lucide-react";
+import FloatingChatButton from "../components/floating-chat-button";
+import Header from "../components/header";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import SearchBar from "../components/ui/search-bar";
+import DateRangePicker from "../components/ui/date-range-picker";
+import { Badge } from "../components/ui/badge";
+import { Skeleton } from "../components/ui/skeleton";
+import { useToast } from "../hooks/use-toast";
+import { apiRequest, queryClient } from "../lib/queryClient";
+import PatientFormModal from "../components/patient-form-modal";
 import type { Patient } from "@shared/schema";
+import PatientDetailsModal from "../components/patient-details-modal";
 
 export default function Patients() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | undefined>(undefined);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: patients, isLoading } = useQuery<Patient[]>({
+
+  const { data: patients, isLoading, error } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
   });
 
@@ -36,11 +43,31 @@ export default function Patients() {
     return age;
   };
 
-  const filteredPatients = patients?.filter(patient =>
-    `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.phone?.includes(searchTerm) ||
-    patient.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPatients = patients?.filter(patient => {
+    const matchText = `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (patient.phone?.includes(searchTerm) ?? false) ||
+      (patient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+    
+    let inDate = true;
+    if (startDate || endDate) {
+      if (patient.createdAt) {
+        const patientDate = new Date(patient.createdAt);
+        const created = patientDate.toISOString().split("T")[0];
+        
+        if (startDate && endDate) {
+          inDate = created >= startDate && created <= endDate;
+        } else if (startDate) {
+          inDate = created >= startDate;
+        } else if (endDate) {
+          inDate = created <= endDate;
+        }
+      } else {
+        inDate = false;
+      }
+    }
+    
+    return matchText && inDate;
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -74,6 +101,11 @@ export default function Patients() {
     setIsFormOpen(true);
   };
 
+  const handleViewPatient = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setDetailsOpen(true);
+  };
+
   const handleDeletePatient = (patient: Patient) => {
     if (confirm(`Êtes-vous sûr de vouloir supprimer le patient ${patient.firstName} ${patient.lastName} ?`)) {
       deleteMutation.mutate(patient.id);
@@ -82,16 +114,16 @@ export default function Patients() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/30 to-emerald-50/20">
         <Header />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center mb-8">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-10 w-40" />
+            <Skeleton className="h-12 w-64" />
+            <Skeleton className="h-12 w-48" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array(6).fill(0).map((_, i) => (
-              <Card key={i} className="border border-slate-200">
+              <Card key={i} className="border border-slate-200 rounded-2xl">
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="flex items-center space-x-3">
@@ -117,147 +149,167 @@ export default function Patients() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/30 to-emerald-50/20">
       <Header />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Gestion des Patients</h1>
-            <p className="text-slate-600 mt-1">
-              {patients?.length || 0} patient{(patients?.length || 0) > 1 ? 's' : ''} enregistré{(patients?.length || 0) > 1 ? 's' : ''}
-            </p>
+        {/* Hero Section */}
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-8 text-white shadow-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-2 flex items-center">
+                  <Users className="h-8 w-8 mr-3 text-green-200" />
+                  Gestion des Patients
+                </h1>
+                <p className="text-green-100 text-lg">
+                  {patients?.length || 0} patient{(patients?.length || 0) > 1 ? 's' : ''} enregistré{(patients?.length || 0) > 1 ? 's' : ''}
+                </p>
+              </div>
+              <Button 
+                onClick={handleCreatePatient} 
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                size="lg"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Nouveau Patient
+              </Button>
+            </div>
           </div>
-          <Button 
-            onClick={handleCreatePatient}
-            className="bg-medical-blue text-white hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nouveau Patient
-          </Button>
         </div>
 
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-            <Input
-              placeholder="Rechercher un patient par nom, téléphone ou email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+        {/* Search and Filter Section */}
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200/50 p-6 mb-8">
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-[1fr_auto]">
+            <SearchBar 
+              placeholder="Recherche par nom, téléphone ou email..." 
+              onSearch={setSearchTerm} 
+              className="w-full rounded-xl border-slate-200 focus:ring-green-500 focus:border-green-500" 
+            />
+            <DateRangePicker 
+              start={startDate} 
+              end={endDate} 
+              onStart={setStartDate} 
+              onEnd={setEndDate} 
+              className="w-full lg:w-auto rounded-xl" 
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPatients && filteredPatients.length > 0 ? (
-            filteredPatients.map((patient) => {
-              const initials = `${patient.firstName[0]}${patient.lastName[0]}`.toUpperCase();
-              const age = calculateAge(patient.birthDate);
-              
-              return (
-                <Card key={patient.id} className="border border-slate-200 hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="h-12 w-12 bg-medical-blue rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold">{initials}</span>
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-slate-900">
-                            {patient.firstName} {patient.lastName}
-                          </h3>
-                          <p className="text-sm text-slate-500">
-                            {age} ans • Né(e) le {new Date(patient.birthDate).toLocaleDateString('fr-FR')}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        {patient.phone && (
-                          <div className="flex items-center text-sm text-slate-600">
-                            <Phone className="h-4 w-4 mr-2 text-slate-400" />
-                            {patient.phone}
-                          </div>
-                        )}
-                        {patient.email && (
-                          <div className="flex items-center text-sm text-slate-600">
-                            <Mail className="h-4 w-4 mr-2 text-slate-400" />
-                            {patient.email}
-                          </div>
-                        )}
-                        {patient.address && (
-                          <div className="flex items-center text-sm text-slate-600">
-                            <MapPin className="h-4 w-4 mr-2 text-slate-400" />
-                            {patient.address}
-                          </div>
-                        )}
-                        <div className="flex items-center text-sm text-slate-600">
-                          <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-                          Créé le {new Date(patient.createdAt!).toLocaleDateString('fr-FR')}
-                        </div>
-                      </div>
-
-                      <div className="flex space-x-2 pt-4">
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Voir
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => handleEditPatient(patient)}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Modifier
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleDeletePatient(patient)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          ) : (
-            <div className="col-span-full text-center py-12">
-              <div className="text-slate-400 mb-4">
-                <Search className="h-12 w-12 mx-auto" />
+        {error ? (
+          <div className="text-center py-16">
+            <div className="bg-red-50 rounded-2xl p-8 max-w-md mx-auto">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <X className="h-8 w-8 text-red-600" />
               </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-2">
+              <p className="text-red-600 font-medium">Erreur lors du chargement des patients</p>
+            </div>
+          </div>
+        ) : filteredPatients?.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="bg-slate-50 rounded-2xl p-8 max-w-md mx-auto">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
                 {searchTerm ? "Aucun patient trouvé" : "Aucun patient enregistré"}
               </h3>
-              <p className="text-slate-500 mb-4">
-                {searchTerm 
-                  ? "Essayez de modifier votre recherche ou d'ajouter un nouveau patient"
-                  : "Commencez par ajouter votre premier patient"
-                }
+              <p className="text-slate-600 mb-6">
+                {searchTerm ? "Essayez de modifier votre recherche" : "Commencez par ajouter votre premier patient"}
               </p>
-              <Button 
-                onClick={handleCreatePatient}
-                className="bg-medical-blue text-white hover:bg-blue-700"
-              >
+              <Button onClick={handleCreatePatient} className="bg-green-600 hover:bg-green-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Nouveau Patient
               </Button>
             </div>
-          )}
-        </div>
-
-        <PatientFormModal
-          isOpen={isFormOpen}
-          onClose={() => setIsFormOpen(false)}
-          patient={selectedPatient}
-          mode={formMode}
-        />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPatients?.map((patient) => (
+              <Card key={patient.id} className="group hover:shadow-xl transition-all duration-300 border border-slate-200/50 rounded-2xl overflow-hidden bg-white hover:-translate-y-1">
+                <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100/50 pb-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                        {patient.firstName[0]}{patient.lastName[0]}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg text-slate-900 group-hover:text-green-600 transition-colors">
+                          {patient.firstName} {patient.lastName}
+                        </CardTitle>
+                                                 <CardDescription className="text-slate-600">
+                           {calculateAge(patient.birthDate)} ans
+                         </CardDescription>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center text-sm text-slate-600">
+                      <Mail className="h-4 w-4 mr-3 text-green-500" />
+                      <span className="truncate">{patient.email}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-slate-600">
+                      <Phone className="h-4 w-4 mr-3 text-green-500" />
+                      <span>{patient.phone}</span>
+                    </div>
+                    {patient.address && (
+                      <div className="flex items-center text-sm text-slate-600">
+                        <MapPin className="h-4 w-4 mr-3 text-green-500" />
+                        <span className="truncate">{patient.address}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 mt-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewPatient(patient)}
+                      className="flex-1 rounded-xl border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 transition-all duration-200"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Détails
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditPatient(patient)}
+                      className="flex-1 rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Modifier
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
+
+      <PatientFormModal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        patient={selectedPatient}
+        mode={formMode}
+      />
+
+      {selectedPatient && (
+        <PatientDetailsModal
+          isOpen={detailsOpen}
+          onClose={() => setDetailsOpen(false)}
+          patientId={selectedPatient.id}
+          patientName={`${selectedPatient.firstName} ${selectedPatient.lastName}`}
+        />
+      )}
+
+      {/* Floating Chat */}
+      <FloatingChatButton
+        gradientColors="from-green-600 to-emerald-600"
+        focusColor="green-500"
+        shadowColor="green-500/25"
+      />
     </div>
   );
-}
+} 

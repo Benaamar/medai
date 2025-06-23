@@ -1,357 +1,344 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Bot, Wand2, FileText, Pill, Mail, Eye, Download, Share, Trash2, Filter } from "lucide-react";
-import Header from "@/components/header";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import AiSummaryModal from "@/components/ai-summary-modal";
-import type { ConsultationWithPatient, AiSummaryWithDetails } from "@shared/schema";
+import { Bot, Wand2, FileText, Pill, Mail, Eye, Download, Share, Trash2, Filter, Menu, X, Send, Sparkles, Brain } from "lucide-react";
+import Header from "../components/header";
+import { Card, CardContent, CardHeader } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Skeleton } from "../components/ui/skeleton";
+import { Badge } from "../components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { useToast } from "../hooks/use-toast";
+import { apiRequest, queryClient } from "../lib/queryClient";
+import type { AiSummaryWithDetails } from "@shared/schema";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import AiAssistant from "../components/ai-assistant";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../components/ui/sheet";
+import FloatingChatButton from "../components/floating-chat-button";
 
-export default function AiAssistant() {
-  const [selectedConsultation, setSelectedConsultation] = useState<string>("");
-  const [summaryType, setSummaryType] = useState<string>("consultation");
+export default function AiAssistantPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [selectedSummary, setSelectedSummary] = useState<{
-    content: string;
-    patientName: string;
-    consultationDate: string;
-    type: string;
-  } | null>(null);
   const { toast } = useToast();
-
-  const { data: consultations, isLoading: consultationsLoading } = useQuery<ConsultationWithPatient[]>({
-    queryKey: ["/api/consultations/today"],
-  });
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showFloatingChat, setShowFloatingChat] = useState(false);
 
   const { data: allSummaries, isLoading: summariesLoading } = useQuery<AiSummaryWithDetails[]>({
-    queryKey: ["/api/ai-summaries/recent"],
+    queryKey: ["/api/ai-summaries"],
   });
 
-  const generateSummaryMutation = useMutation({
-    mutationFn: async ({ consultationId, summaryType }: { consultationId: number, summaryType: string }) => {
-      const response = await apiRequest("POST", "/api/ai-summaries/generate", {
-        consultationId,
-        summaryType
-      });
-      return response.json();
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/ai-summaries/${id}`);
     },
-    onSuccess: (data) => {
-      toast({
-        title: "Synthèse générée avec succès",
-        description: "La synthèse IA a été créée et sauvegardée."
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/ai-summaries/recent"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      
-      if (selectedConsultation) {
-        const consultation = consultations?.find(c => c.id.toString() === selectedConsultation);
-        if (consultation) {
-          setSelectedSummary({
-            content: data.content,
-            patientName: `${consultation.patient.firstName} ${consultation.patient.lastName}`,
-            consultationDate: new Date().toLocaleDateString('fr-FR'),
-            type: summaryType
-          });
-        }
-      }
+    onSuccess: () => {
+      toast({ title: "Résumé supprimé avec succès" });
+      queryClient.invalidateQueries({ queryKey: ["/api/ai-summaries"] });
     },
-    onError: (error) => {
-      toast({
-        title: "Erreur lors de la génération",
-        description: error instanceof Error ? error.message : "Une erreur est survenue lors de la génération de la synthèse.",
-        variant: "destructive"
-      });
-    }
   });
-
-  const handleGenerateSummary = () => {
-    if (!selectedConsultation) {
-      toast({
-        title: "Sélection requise",
-        description: "Veuillez sélectionner une consultation.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    generateSummaryMutation.mutate({
-      consultationId: parseInt(selectedConsultation),
-      summaryType
-    });
-  };
-
-  const getSummaryTypeIcon = (type: string) => {
-    switch (type) {
-      case "consultation": return <FileText className="text-medical-blue h-5 w-5" />;
-      case "prescription": return <Pill className="text-medical-green h-5 w-5" />;
-      case "referral": return <Mail className="text-purple-600 h-5 w-5" />;
-      default: return <FileText className="text-medical-blue h-5 w-5" />;
-    }
-  };
-
-  const getSummaryTypeLabel = (type: string) => {
-    switch (type) {
-      case "consultation": return "Synthèse de consultation";
-      case "prescription": return "Prescription médicale";
-      case "referral": return "Courrier de correspondance";
-      default: return type;
-    }
-  };
-
-  const getSummaryTypeBadge = (type: string) => {
-    const config = {
-      consultation: "bg-medical-blue text-white",
-      prescription: "bg-medical-green text-white",
-      referral: "bg-purple-600 text-white"
-    };
-    return config[type as keyof typeof config] || "bg-slate-400 text-white";
-  };
 
   const filteredSummaries = allSummaries?.filter(summary => 
     typeFilter === "all" || summary.type === typeFilter
-  );
+  ) || [];
 
-  const handleViewSummary = (summary: AiSummaryWithDetails) => {
-    setSelectedSummary({
-      content: summary.content,
-      patientName: `${summary.patient.firstName} ${summary.patient.lastName}`,
-      consultationDate: new Date(summary.generatedAt!).toLocaleDateString('fr-FR'),
-      type: summary.type
-    });
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'consultation': return 'bg-gradient-to-r from-blue-500 to-indigo-500';
+      case 'prescription': return 'bg-gradient-to-r from-green-500 to-emerald-500';
+      case 'certificate': return 'bg-gradient-to-r from-amber-500 to-orange-500';
+      default: return 'bg-gradient-to-r from-slate-500 to-slate-600';
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'consultation': return 'Consultation';
+      case 'prescription': return 'Prescription';
+      case 'certificate': return 'Certificat';
+      default: return 'Autre';
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'consultation': return FileText;
+      case 'prescription': return Pill;
+      case 'certificate': return Mail;
+      default: return Bot;
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20">
       <Header />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Hero Section */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center">
-            <Bot className="text-purple-600 mr-3" />
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 text-white shadow-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-2 flex items-center">
+                  <Brain className="h-8 w-8 mr-3 text-purple-200" />
             Assistant IA Médical
           </h1>
-          <p className="text-slate-600 mt-1">
-            Générez automatiquement des synthèses, prescriptions et courriers médicaux
-          </p>
+                <p className="text-purple-100 text-lg">
+                  Votre compagnon intelligent pour la pratique médicale
+                </p>
+              </div>
+              <div className="hidden md:block">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                  <div className="flex items-center text-purple-100">
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    <span className="font-medium">Alimenté par l'IA</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Generation Panel */}
-          <div className="space-y-6">
-            <Card className="border border-slate-200">
-              <CardHeader className="px-6 py-4 border-b border-slate-200">
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Générer une Synthèse IA
-                </h2>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-6">
-                  <div>
-                    <Label className="text-sm font-medium text-slate-700 mb-3 block">
-                      Sélectionner un patient
-                    </Label>
-                    <Select value={selectedConsultation} onValueChange={setSelectedConsultation}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Choisir un patient..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {consultationsLoading ? (
-                          <div className="p-2">
-                            <Skeleton className="h-4 w-full" />
-                          </div>
-                        ) : consultations?.map((consultation) => (
-                          <SelectItem key={consultation.id} value={consultation.id.toString()}>
-                            {consultation.patient.firstName} {consultation.patient.lastName} - {consultation.reason}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
+          {/* Main Chat Area */}
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200/50 overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-b border-slate-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <Bot className="h-5 w-5" />
                   </div>
-                  
                   <div>
-                    <Label className="text-sm font-medium text-slate-700 mb-3 block">
-                      Type de document à générer
-                    </Label>
-                    <RadioGroup value={summaryType} onValueChange={setSummaryType} className="space-y-3">
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50">
-                        <RadioGroupItem value="consultation" id="consultation" />
-                        <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4 text-medical-blue" />
-                          <Label htmlFor="consultation" className="text-sm font-medium cursor-pointer">
-                            Synthèse de consultation
-                          </Label>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50">
-                        <RadioGroupItem value="prescription" id="prescription" />
-                        <div className="flex items-center space-x-2">
-                          <Pill className="h-4 w-4 text-medical-green" />
-                          <Label htmlFor="prescription" className="text-sm font-medium cursor-pointer">
-                            Prescription médicale
-                          </Label>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50">
-                        <RadioGroupItem value="referral" id="referral" />
-                        <div className="flex items-center space-x-2">
-                          <Mail className="h-4 w-4 text-purple-600" />
-                          <Label htmlFor="referral" className="text-sm font-medium cursor-pointer">
-                            Courrier de correspondance
-                          </Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
+                    <h2 className="text-xl font-semibold text-slate-900">Chat Assistant</h2>
+                    <p className="text-slate-600">Posez vos questions médicales</p>
                   </div>
-                  
-                  <Button 
-                    onClick={handleGenerateSummary}
-                    disabled={generateSummaryMutation.isPending || !selectedConsultation}
-                    className="w-full bg-purple-600 text-white hover:bg-purple-700"
-                    size="lg"
-                  >
-                    {generateSummaryMutation.isPending ? (
-                      <>
-                        <Bot className="h-4 w-4 mr-2 animate-spin" />
-                        Génération en cours...
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="h-4 w-4 mr-2" />
-                        Générer avec IA
-                      </>
-                    )}
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+                <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="lg:hidden rounded-xl">
+                      <Menu className="h-4 w-4 mr-2" />
+                      Historique
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+                    <SheetHeader>
+                      <SheetTitle>Historique des Résumés</SheetTitle>
+                      <SheetDescription>
+                        Consultez tous vos résumés générés par l'IA
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="mt-6">
+                      {/* Mobile version of summaries */}
+                      <div className="space-y-4">
+                        {filteredSummaries.map((summary) => {
+                          const IconComponent = getTypeIcon(summary.type);
+                          return (
+                            <Card key={summary.id} className="border border-slate-200/50 rounded-xl">
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between mb-3">
+                                  <div className="flex items-center space-x-3">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${getTypeColor(summary.type)}`}>
+                                      <IconComponent className="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-medium text-slate-900">
+                                        {summary.patient?.firstName} {summary.patient?.lastName}
+                                      </h4>
+                                      <p className="text-xs text-slate-500">
+                                        {summary.generatedAt ? format(new Date(summary.generatedAt), 'dd MMM yyyy', { locale: fr }) : 'Date inconnue'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Badge className={`${getTypeColor(summary.type)} text-white text-xs`}>
+                                    {getTypeLabel(summary.type)}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-slate-600 line-clamp-2 mb-3">
+                                  {summary.content}
+                                </p>
+                                <div className="flex justify-end space-x-2">
+                                  <Button variant="outline" size="sm" className="rounded-lg">
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    Voir
+                                  </Button>
+                                  <Button variant="outline" size="sm" onClick={() => deleteMutation.mutate(summary.id)} className="rounded-lg text-red-600">
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
+            <div className="h-[700px]">
+              <AiAssistant onViewSummary={() => {}} />
+            </div>
           </div>
-
-          {/* Summaries History */}
-          <div className="space-y-6">
-            <Card className="border border-slate-200">
-              <CardHeader className="px-6 py-4 border-b border-slate-200">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Historique des Synthèses
-                  </h2>
+          
+          {/* Sidebar - Desktop only */}
+          <div className="hidden lg:block space-y-6">
+            {/* Filter Section */}
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-200/50 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                <Filter className="h-5 w-5 mr-2 text-purple-600" />
+                Filtrer par type
+              </h3>
                   <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-48">
-                      <Filter className="h-4 w-4 mr-2" />
-                      <SelectValue />
+                <SelectTrigger className="w-full rounded-xl">
+                  <SelectValue placeholder="Type de résumé" />
                     </SelectTrigger>
-                    <SelectContent>
+                <SelectContent className="rounded-xl">
                       <SelectItem value="all">Tous les types</SelectItem>
-                      <SelectItem value="consultation">Synthèses</SelectItem>
+                  <SelectItem value="consultation">Consultations</SelectItem>
                       <SelectItem value="prescription">Prescriptions</SelectItem>
-                      <SelectItem value="referral">Courriers</SelectItem>
+                  <SelectItem value="certificate">Certificats</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="max-h-96 overflow-y-auto">
+
+            {/* Summaries History */}
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-200/50 overflow-hidden">
+              <div className="p-6 border-b border-slate-100">
+                <h3 className="text-lg font-semibold text-slate-900 flex items-center">
+                  <FileText className="h-5 w-5 mr-2 text-purple-600" />
+                  Historique des Résumés
+                </h3>
+                <p className="text-sm text-slate-600 mt-1">
+                  {filteredSummaries.length} résumé{filteredSummaries.length > 1 ? 's' : ''}
+                </p>
+              </div>
+              <div className="max-h-[500px] overflow-y-auto">
                   {summariesLoading ? (
-                    <div className="p-4 space-y-4">
-                      {Array(4).fill(0).map((_, i) => (
-                        <div key={i} className="flex items-start space-x-3">
-                          <Skeleton className="h-5 w-5 mt-1" />
-                          <div className="flex-1 space-y-2">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-3 w-48" />
-                            <Skeleton className="h-3 w-full" />
+                  <div className="p-6 space-y-4">
+                    {Array(5).fill(0).map((_, i) => (
+                      <div key={i} className="space-y-3">
+                        <div className="flex items-center space-x-3">
+                          <Skeleton className="h-8 w-8 rounded-lg" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-3 w-16" />
                           </div>
-                          <Skeleton className="h-8 w-16" />
+                        </div>
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-2/3" />
                         </div>
                       ))}
+                  </div>
+                ) : filteredSummaries.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <FileText className="h-6 w-6 text-slate-400" />
                     </div>
-                  ) : filteredSummaries && filteredSummaries.length > 0 ? (
-                    <div className="divide-y divide-slate-200">
-                      {filteredSummaries.map((summary) => (
+                    <p className="text-slate-600 text-sm">
+                      {typeFilter === "all" ? "Aucun résumé généré" : "Aucun résumé de ce type"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {filteredSummaries.map((summary) => {
+                      const IconComponent = getTypeIcon(summary.type);
+                      return (
                         <div key={summary.id} className="p-4 hover:bg-slate-50 transition-colors">
-                          <div className="flex items-start justify-between space-x-3">
-                            <div className="flex items-start space-x-3 flex-1 min-w-0">
-                              <div className="flex-shrink-0 mt-1">
-                                {getSummaryTypeIcon(summary.type)}
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${getTypeColor(summary.type)}`}>
+                                <IconComponent className="h-4 w-4" />
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center space-x-2 mb-1">
-                                  <p className="text-sm font-medium text-slate-900">
-                                    {summary.patient.firstName} {summary.patient.lastName}
-                                  </p>
-                                  <Badge className={`text-xs ${getSummaryTypeBadge(summary.type)}`}>
-                                    {getSummaryTypeLabel(summary.type)}
-                                  </Badge>
-                                </div>
-                                <p className="text-xs text-slate-500 mb-2">
-                                  {new Date(summary.generatedAt!).toLocaleDateString('fr-FR')} à {new Date(summary.generatedAt!).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                                <p className="text-xs text-slate-400 line-clamp-2">
-                                  {summary.content.substring(0, 120)}...
+                              <div>
+                                <h4 className="font-medium text-slate-900 text-sm">
+                                  {summary.patient?.firstName} {summary.patient?.lastName}
+                                </h4>
+                                <p className="text-xs text-slate-500">
+                                  {summary.generatedAt ? format(new Date(summary.generatedAt), 'dd MMM yyyy', { locale: fr }) : 'Date inconnue'}
                                 </p>
                               </div>
                             </div>
-                            <div className="flex space-x-1">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleViewSummary(summary)}
-                                className="text-medical-blue hover:text-blue-700"
-                              >
-                                <Eye className="h-4 w-4" />
+                            <Badge className={`${getTypeColor(summary.type)} text-white text-xs px-2 py-1 rounded-full`}>
+                              {getTypeLabel(summary.type)}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-slate-600 line-clamp-2 mb-3 leading-relaxed">
+                            {summary.content}
+                          </p>
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="outline" size="sm" className="h-7 px-2 text-xs rounded-lg">
+                              <Eye className="h-3 w-3 mr-1" />
+                              Voir
+                              </Button>
+                            <Button variant="outline" size="sm" className="h-7 px-2 text-xs rounded-lg">
+                              <Download className="h-3 w-3 mr-1" />
+                              Export
                               </Button>
                               <Button
+                              variant="outline" 
                                 size="sm"
-                                variant="ghost"
-                                className="text-slate-500 hover:text-slate-700"
+                              onClick={() => deleteMutation.mutate(summary.id)}
+                              className="h-7 px-2 text-xs rounded-lg text-red-600 hover:bg-red-50"
                               >
-                                <Download className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3" />
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-slate-500 hover:text-slate-700"
-                              >
-                                <Share className="h-4 w-4" />
-                              </Button>
-                            </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-8 text-center">
-                      <Bot className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                      <h3 className="text-sm font-medium text-slate-900 mb-2">
-                        {typeFilter === "all" ? "Aucune synthèse générée" : "Aucune synthèse de ce type"}
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        {typeFilter === "all" 
-                          ? "Commencez par générer votre première synthèse IA"
-                          : "Modifiez le filtre ou générez un nouveau document"
-                        }
-                      </p>
+                      );
+                    })}
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+            </div>
           </div>
         </div>
-      </div>
 
-      {selectedSummary && (
-        <AiSummaryModal
-          summary={selectedSummary}
-          onClose={() => setSelectedSummary(null)}
+        {/* Floating Chat Bubble */}
+        {showFloatingChat && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-80 max-h-96 flex flex-col backdrop-blur-sm">
+              <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-2xl">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <Bot className="h-4 w-4" />
+                  </div>
+                  <span className="font-semibold">Assistant IA</span>
+                </div>
+                <button 
+                  onClick={() => setShowFloatingChat(false)}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="p-4 flex-1 overflow-y-auto bg-slate-50">
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+                  <p className="text-slate-700 text-sm leading-relaxed">
+                    👋 Bonjour ! Je suis votre assistant IA médical. Comment puis-je vous aider aujourd'hui ?
+                  </p>
+                </div>
+              </div>
+              <div className="p-4 border-t border-slate-100 bg-white rounded-b-2xl">
+                <div className="flex space-x-3">
+                  <input 
+                    type="text" 
+                    placeholder="Tapez votre message..."
+                    className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                  <button className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+                    <Send className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Floating Chat */}
+        <FloatingChatButton
+          gradientColors="from-purple-600 to-pink-600"
+          focusColor="purple-500"
+          shadowColor="purple-500/25"
         />
-      )}
+      </div>
     </div>
   );
 }

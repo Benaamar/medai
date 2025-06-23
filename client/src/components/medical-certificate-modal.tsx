@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { FileCheck, Plus } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { FileCheck, Plus, User, Calendar, FileText, Award, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Checkbox } from "./ui/checkbox";
+import { useToast } from "../hooks/use-toast";
+import { apiRequest, queryClient } from "../lib/queryClient";
 import type { Patient } from "@shared/schema";
 
 interface MedicalCertificateModalProps {
@@ -20,11 +20,11 @@ interface MedicalCertificateModalProps {
 export default function MedicalCertificateModal({ isOpen, onClose }: MedicalCertificateModalProps) {
   const [selectedPatient, setSelectedPatient] = useState<string>("");
   const [certificateType, setCertificateType] = useState<string>("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [reason, setReason] = useState("");
-  const [restrictions, setRestrictions] = useState<string[]>([]);
-  const [notes, setNotes] = useState("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [reason, setReason] = useState<string>("");
+  const [restrictions, setRestrictions] = useState<string>("");
+  const [isUrgent, setIsUrgent] = useState<boolean>(false);
   const { toast } = useToast();
 
   const { data: patients } = useQuery<Patient[]>({
@@ -34,29 +34,28 @@ export default function MedicalCertificateModal({ isOpen, onClose }: MedicalCert
   const generateCertificateMutation = useMutation({
     mutationFn: async (data: {
       patientId: number;
-      certificateType: string;
+      type: string;
       startDate: string;
-      endDate: string;
+      endDate?: string;
       reason: string;
-      restrictions: string[];
-      notes: string;
+      restrictions?: string;
+      isUrgent: boolean;
     }) => {
       const certificateContent = generateCertificateContent(data);
       
-      // Créer une synthèse IA de type certificat
       const response = await apiRequest("POST", "/api/ai-summaries", {
-        consultationId: 1, // Temporaire
+        consultationId: 1,
         patientId: data.patientId,
         doctorId: 1,
-        type: "referral", // Utiliser le type referral pour les certificats
+        type: "certificate",
         content: certificateContent
       });
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Certificat médical créé",
-        description: "Le certificat médical a été généré avec succès.",
+        title: "Certificat généré",
+        description: "Le certificat médical a été créé avec succès.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/ai-summaries/recent"] });
       onClose();
@@ -65,7 +64,7 @@ export default function MedicalCertificateModal({ isOpen, onClose }: MedicalCert
     onError: () => {
       toast({
         title: "Erreur",
-        description: "Impossible de créer le certificat médical.",
+        description: "Impossible de générer le certificat.",
         variant: "destructive",
       });
     },
@@ -73,12 +72,12 @@ export default function MedicalCertificateModal({ isOpen, onClose }: MedicalCert
 
   const generateCertificateContent = (data: {
     patientId: number;
-    certificateType: string;
+    type: string;
     startDate: string;
-    endDate: string;
+    endDate?: string;
     reason: string;
-    restrictions: string[];
-    notes: string;
+    restrictions?: string;
+    isUrgent: boolean;
   }) => {
     const patient = patients?.find(p => p.id === data.patientId);
     const today = new Date().toLocaleDateString('fr-FR');
@@ -89,126 +88,71 @@ Dr. Marie DUBOIS
 Médecin Généraliste
 123 Avenue des Champs-Élysées, 75008 Paris
 Tél: 01 42 56 78 90
-RPPS: 10100123456
+RPPS: 12345678901
 
 Paris, le ${today}
 
-`;
+Je soussignée, Dr. Marie DUBOIS, certifie avoir examiné ce jour :
 
-    if (data.certificateType === "arret_travail") {
-      content += `CERTIFICAT MÉDICAL D'ARRÊT DE TRAVAIL
-
-Je soussignée, Docteur Marie DUBOIS, certifie avoir examiné ce jour :
-
-${patient?.firstName} ${patient?.lastName}
+M./Mme ${patient?.firstName} ${patient?.lastName}
 Né(e) le ${patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('fr-FR') : ''}
 Demeurant : ${patient?.address || ''}
 
 `;
 
-      if (data.reason) {
-        content += `MOTIF MÉDICAL:
+    switch (data.type) {
+      case "arret_travail":
+        content += `ARRÊT DE TRAVAIL
+
+Motif médical : ${data.reason}
+
+L'état de santé du patient nécessite un arrêt de travail du ${new Date(data.startDate).toLocaleDateString('fr-FR')} au ${data.endDate ? new Date(data.endDate).toLocaleDateString('fr-FR') : 'à déterminer'}.
+
+${data.restrictions ? `Restrictions particulières : ${data.restrictions}` : ''}
+
+Certificat établi à la demande de l'intéressé(e) et remis en main propre pour faire valoir ce que de droit.`;
+        break;
+        
+      case "aptitude_sport":
+        content += `CERTIFICAT D'APTITUDE AU SPORT
+
+Je certifie que l'état de santé de ${patient?.firstName} ${patient?.lastName} lui permet la pratique d'activités sportives.
+
+${data.reason ? `Observations : ${data.reason}` : ''}
+${data.restrictions ? `Restrictions ou recommandations : ${data.restrictions}` : ''}
+
+Certificat valable pour la saison sportive en cours.`;
+        break;
+        
+      case "contre_indication":
+        content += `CERTIFICAT DE CONTRE-INDICATION
+
+Je certifie que l'état de santé de ${patient?.firstName} ${patient?.lastName} présente une contre-indication temporaire à :
+
 ${data.reason}
 
-`;
-      }
+Période de contre-indication : du ${new Date(data.startDate).toLocaleDateString('fr-FR')} ${data.endDate ? 'au ' + new Date(data.endDate).toLocaleDateString('fr-FR') : ''}
 
-      content += `En conséquence, j'estime que l'état de santé de ce patient justifie un arrêt de travail `;
+${data.restrictions ? `Précisions : ${data.restrictions}` : ''}`;
+        break;
+        
+      default:
+        content += `CERTIFICAT MÉDICAL GÉNÉRAL
 
-      if (data.startDate && data.endDate) {
-        content += `du ${new Date(data.startDate).toLocaleDateString('fr-FR')} au ${new Date(data.endDate).toLocaleDateString('fr-FR')} inclus.`;
-      } else if (data.startDate) {
-        content += `à compter du ${new Date(data.startDate).toLocaleDateString('fr-FR')}.`;
-      }
-
-      content += `
-
-`;
-
-      if (data.restrictions.length > 0) {
-        content += `RESTRICTIONS:
-${data.restrictions.join('\n')}
-
-`;
-      }
-
-    } else if (data.certificateType === "aptitude_sport") {
-      content += `CERTIFICAT MÉDICAL D'APTITUDE AU SPORT
-
-Je soussignée, Docteur Marie DUBOIS, certifie avoir examiné ce jour :
-
-${patient?.firstName} ${patient?.lastName}
-Né(e) le ${patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('fr-FR') : ''}
-
-L'examen clinique ne révèle aucune contre-indication à la pratique sportive `;
-      
-      if (data.reason) {
-        content += `en ${data.reason}`;
-      }
-      
-      content += `.
-
-`;
-
-      if (data.restrictions.length > 0) {
-        content += `RESTRICTIONS PARTICULIÈRES:
-${data.restrictions.join('\n')}
-
-`;
-      }
-
-    } else if (data.certificateType === "contre_indication") {
-      content += `CERTIFICAT MÉDICAL DE CONTRE-INDICATION
-
-Je soussignée, Docteur Marie DUBOIS, certifie avoir examiné ce jour :
-
-${patient?.firstName} ${patient?.lastName}
-Né(e) le ${patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('fr-FR') : ''}
-
-`;
-
-      if (data.reason) {
-        content += `CONTRE-INDICATION MÉDICALE:
 ${data.reason}
 
-`;
-      }
+${data.startDate ? `Date d'effet : ${new Date(data.startDate).toLocaleDateString('fr-FR')}` : ''}
+${data.endDate ? `Validité jusqu'au : ${new Date(data.endDate).toLocaleDateString('fr-FR')}` : ''}
 
-      if (data.startDate && data.endDate) {
-        content += `Cette contre-indication est valable du ${new Date(data.startDate).toLocaleDateString('fr-FR')} au ${new Date(data.endDate).toLocaleDateString('fr-FR')}.
-
-`;
-      }
-
-    } else {
-      // Certificat général
-      content += `CERTIFICAT MÉDICAL
-
-Je soussignée, Docteur Marie DUBOIS, certifie avoir examiné ce jour :
-
-${patient?.firstName} ${patient?.lastName}
-Né(e) le ${patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('fr-FR') : ''}
-
-`;
-
-      if (data.reason) {
-        content += `${data.reason}
-
-`;
-      }
+${data.restrictions ? `Observations : ${data.restrictions}` : ''}`;
     }
 
-    if (data.notes) {
-      content += `OBSERVATIONS:
-${data.notes}
+    content += `
 
-`;
-    }
+${data.isUrgent ? 'CERTIFICAT URGENT\n' : ''}
+Certificat établi à la demande de l'intéressé(e) et remis en main propre pour faire valoir ce que de droit.
 
-    content += `Certificat établi à la demande de l'intéressé(e) et remis en main propre.
-
-Dr. Marie DUBOIS
-Signature et cachet`;
+Dr. Marie DUBOIS`;
 
     return content;
   };
@@ -219,16 +163,8 @@ Signature et cachet`;
     setStartDate("");
     setEndDate("");
     setReason("");
-    setRestrictions([]);
-    setNotes("");
-  };
-
-  const handleRestrictionChange = (restriction: string, checked: boolean) => {
-    if (checked) {
-      setRestrictions([...restrictions, restriction]);
-    } else {
-      setRestrictions(restrictions.filter(r => r !== restriction));
-    }
+    setRestrictions("");
+    setIsUrgent(false);
   };
 
   const handleSubmit = () => {
@@ -250,181 +186,224 @@ Signature et cachet`;
       return;
     }
 
+    if (!reason.trim()) {
+      toast({
+        title: "Motif requis",
+        description: "Veuillez indiquer le motif du certificat.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     generateCertificateMutation.mutate({
       patientId: parseInt(selectedPatient),
-      certificateType,
+      type: certificateType,
       startDate,
       endDate,
       reason,
       restrictions,
-      notes
+      isUrgent
     });
   };
 
+  const isLoading = generateCertificateMutation.isPending;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center">
-            <FileCheck className="h-5 w-5 mr-2 text-medical-amber" />
-            Certificat Médical
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="patient">Patient *</Label>
-            <Select value={selectedPatient} onValueChange={setSelectedPatient}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un patient" />
-              </SelectTrigger>
-              <SelectContent>
-                {patients?.map((patient) => (
-                  <SelectItem key={patient.id} value={patient.id.toString()}>
-                    {patient.firstName} {patient.lastName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="certificateType">Type de certificat *</Label>
-            <Select value={certificateType} onValueChange={setCertificateType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner le type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="arret_travail">Arrêt de travail</SelectItem>
-                <SelectItem value="aptitude_sport">Aptitude au sport</SelectItem>
-                <SelectItem value="contre_indication">Contre-indication</SelectItem>
-                <SelectItem value="general">Certificat général</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {(certificateType === "arret_travail" || certificateType === "contre_indication") && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="startDate">Date de début</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
+      <DialogContent aria-describedby="certificate-modal-desc" className="max-w-3xl max-h-[90vh] overflow-hidden">
+        {/* Header avec gradient */}
+        <div className="bg-gradient-to-r from-amber-600 to-orange-600 text-white p-6 -m-6 mb-6 rounded-t-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-xl font-bold">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mr-3">
+                <FileCheck className="h-5 w-5" />
               </div>
+              Certificat Médical
+            </DialogTitle>
+            <DialogDescription id="certificate-modal-desc" className="text-amber-100 mt-2">
+              Générer et personnaliser un certificat médical pour un patient
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+
+        <div className="overflow-y-auto max-h-[60vh] px-1">
+          <div className="space-y-6">
+            {/* Section Patient */}
+            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+              <div className="flex items-center mb-4">
+                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center mr-3">
+                  <User className="h-4 w-4 text-amber-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Sélection du patient</h3>
+              </div>
+              
               <div>
-                <Label htmlFor="endDate">Date de fin</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
+                <Label htmlFor="patient" className="text-slate-700 font-medium">
+                  Patient *
+                </Label>
+                <Select value={selectedPatient} onValueChange={setSelectedPatient}>
+                  <SelectTrigger className="mt-1 rounded-xl border-slate-200 focus:ring-amber-500 focus:border-amber-500">
+                    <SelectValue placeholder="Sélectionner un patient" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {patients?.map((patient) => (
+                      <SelectItem key={patient.id} value={patient.id.toString()}>
+                        {patient.firstName} {patient.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          )}
 
-          <div>
-            <Label htmlFor="reason">
-              {certificateType === "arret_travail" ? "Motif médical" :
-               certificateType === "aptitude_sport" ? "Discipline sportive" :
-               certificateType === "contre_indication" ? "Contre-indication" :
-               "Motif du certificat"}
-            </Label>
-            <Textarea
-              id="reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder={
-                certificateType === "arret_travail" ? "Syndrome grippal, lombalgie..." :
-                certificateType === "aptitude_sport" ? "Football, natation, course à pied..." :
-                certificateType === "contre_indication" ? "Contre-indication temporaire à..." :
-                "Objet du certificat médical"
-              }
-              rows={3}
-            />
-          </div>
-
-          {(certificateType === "arret_travail" || certificateType === "aptitude_sport") && (
-            <div>
-              <Label>Restrictions particulières</Label>
-              <div className="space-y-2 mt-2">
-                {certificateType === "arret_travail" ? (
-                  <>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="sortie-autorisee"
-                        checked={restrictions.includes("Sorties autorisées")}
-                        onCheckedChange={(checked) => handleRestrictionChange("Sorties autorisées", !!checked)}
-                      />
-                      <Label htmlFor="sortie-autorisee" className="text-sm">Sorties autorisées</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="travail-leger"
-                        checked={restrictions.includes("Reprise de travail léger possible")}
-                        onCheckedChange={(checked) => handleRestrictionChange("Reprise de travail léger possible", !!checked)}
-                      />
-                      <Label htmlFor="travail-leger" className="text-sm">Reprise de travail léger possible</Label>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="competition"
-                        checked={restrictions.includes("Pas de compétition")}
-                        onCheckedChange={(checked) => handleRestrictionChange("Pas de compétition", !!checked)}
-                      />
-                      <Label htmlFor="competition" className="text-sm">Pas de compétition</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="contact"
-                        checked={restrictions.includes("Éviter les sports de contact")}
-                        onCheckedChange={(checked) => handleRestrictionChange("Éviter les sports de contact", !!checked)}
-                      />
-                      <Label htmlFor="contact" className="text-sm">Éviter les sports de contact</Label>
-                    </div>
-                  </>
-                )}
+            {/* Section Type de certificat */}
+            <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+              <div className="flex items-center mb-4">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                  <Award className="h-4 w-4 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Type de certificat</h3>
+              </div>
+              
+              <div>
+                <Label htmlFor="certificateType" className="text-slate-700 font-medium">
+                  Type de certificat *
+                </Label>
+                <Select value={certificateType} onValueChange={setCertificateType}>
+                  <SelectTrigger className="mt-1 rounded-xl border-slate-200 focus:ring-blue-500 focus:border-blue-500">
+                    <SelectValue placeholder="Sélectionner le type" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="arret_travail">Arrêt de travail</SelectItem>
+                    <SelectItem value="aptitude_sport">Aptitude au sport</SelectItem>
+                    <SelectItem value="contre_indication">Contre-indication</SelectItem>
+                    <SelectItem value="general">Certificat général</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          )}
 
-          <div>
-            <Label htmlFor="notes">Observations complémentaires</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Observations particulières, recommandations..."
-              rows={3}
-            />
-          </div>
+            {/* Section Dates */}
+            <div className="bg-green-50 rounded-xl p-6 border border-green-200">
+              <div className="flex items-center mb-4">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                  <Calendar className="h-4 w-4 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Période de validité</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="startDate" className="text-slate-700 font-medium flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-green-600" />
+                    Date de début
+                  </Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="mt-1 rounded-xl border-slate-200 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="endDate" className="text-slate-700 font-medium flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-green-600" />
+                    Date de fin (optionnelle)
+                  </Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="mt-1 rounded-xl border-slate-200 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+              </div>
+            </div>
 
-          <div className="flex space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={generateCertificateMutation.isPending}
-              className="flex-1 bg-medical-amber text-white hover:bg-amber-600"
-            >
-              {generateCertificateMutation.isPending
-                ? "Génération..."
-                : "Créer le certificat"
-              }
-            </Button>
+            {/* Section Détails */}
+            <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
+              <div className="flex items-center mb-4">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                  <FileText className="h-4 w-4 text-purple-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Détails du certificat</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="reason" className="text-slate-700 font-medium">
+                    Motif / Diagnostic *
+                  </Label>
+                  <Textarea
+                    id="reason"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Indiquez le motif médical ou le diagnostic justifiant ce certificat..."
+                    rows={3}
+                    className="mt-1 rounded-xl border-slate-200 focus:ring-purple-500 focus:border-purple-500 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="restrictions" className="text-slate-700 font-medium">
+                    Restrictions ou observations
+                  </Label>
+                  <Textarea
+                    id="restrictions"
+                    value={restrictions}
+                    onChange={(e) => setRestrictions(e.target.value)}
+                    placeholder="Restrictions particulières, recommandations, observations..."
+                    rows={3}
+                    className="mt-1 rounded-xl border-slate-200 focus:ring-purple-500 focus:border-purple-500 resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="urgent"
+                    checked={isUrgent}
+                    onCheckedChange={(checked) => setIsUrgent(checked === true)}
+                    className="rounded-md"
+                  />
+                  <Label htmlFor="urgent" className="text-slate-700 font-medium cursor-pointer">
+                    Certificat urgent
+                  </Label>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Footer avec boutons */}
+        <div className="flex justify-end space-x-3 pt-6 border-t border-slate-200">
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+            className="rounded-xl border-slate-200 hover:bg-slate-50"
+            disabled={isLoading}
+          >
+            Annuler
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            disabled={isLoading}
+            className="bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-700 hover:to-orange-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                Génération...
+              </>
+            ) : (
+              <>
+                <FileCheck className="h-4 w-4 mr-2" />
+                Générer le certificat
+              </>
+            )}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

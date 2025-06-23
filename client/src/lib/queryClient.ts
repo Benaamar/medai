@@ -3,6 +3,7 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
+    console.error(`Erreur API: ${res.status}: ${text}`);
     throw new Error(`${res.status}: ${text}`);
   }
 }
@@ -12,15 +13,22 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  console.log(`Requête API: ${method} ${url}`);
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: data ? { "Content-Type": "application/json" } : {},
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
 
-  await throwIfResNotOk(res);
-  return res;
+    console.log(`Réponse API: ${method} ${url} - Status: ${res.status}`);
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    console.error(`Erreur lors de la requête API: ${method} ${url}`, error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -29,16 +37,20 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    console.log(`Exécution de la requête avec QueryKey:`, queryKey);
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      console.log(`Retour null pour 401 sur ${queryKey[0]}`);
       return null;
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    const data = await res.json();
+    console.log(`Données reçues pour ${queryKey[0]}:`, data);
+    return data;
   };
 
 export const queryClient = new QueryClient({
@@ -49,9 +61,15 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: Infinity,
       retry: false,
+      onError: (error) => {
+        console.error("Erreur de requête:", error);
+      }
     },
     mutations: {
       retry: false,
+      onError: (error) => {
+        console.error("Erreur de mutation:", error);
+      }
     },
   },
 });
