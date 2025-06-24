@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { useToast } from "../hooks/use-toast";
 import { useLocation } from "wouter";
+import { queryClient } from "../lib/queryClient";
 import FloatingChatButton from "../components/floating-chat-button";
 
 export default function Login() {
@@ -27,6 +28,8 @@ export default function Login() {
       const data = await res.json();
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      // Invalider le cache pour forcer la récupération des données utilisateur
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({ title: "Connecté", description: "Bienvenue " + data.user.name });
       setLocation("/");
     } catch (error) {

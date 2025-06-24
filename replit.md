@@ -98,6 +98,7 @@ Medical AI Companion is a comprehensive medical practice management system that 
 
 ## Changelog
 
+- June 24, 2025. Corrected login redirection issue by adding query invalidation after authentication
 - June 23, 2025. Initial setup
 
 ## User Preferences
