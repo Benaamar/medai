@@ -100,6 +100,23 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(patients);
   }
 
+  async getPatientsByDoctor(doctorId: number): Promise<Patient[]> {
+    // Récupérer les patients qui ont eu au moins une consultation avec ce docteur
+    const patientIds = await db
+      .selectDistinct({ patientId: consultations.patientId })
+      .from(consultations)
+      .where(eq(consultations.doctorId, doctorId));
+    
+    if (patientIds.length === 0) {
+      return [];
+    }
+    
+    return await db
+      .select()
+      .from(patients)
+      .where(inArray(patients.id, patientIds.map(p => p.patientId)));
+  }
+
   async createPatient(insertPatient: InsertPatient): Promise<Patient> {
     const [patient] = await db
       .insert(patients)
@@ -137,6 +154,23 @@ export class DatabaseStorage implements IStorage {
       })
       .from(consultations)
       .innerJoin(patients, eq(consultations.patientId, patients.id))
+      .orderBy(consultations.date, consultations.time);
+
+    return results.map(result => ({
+      ...result.consultation,
+      patient: result.patient
+    }));
+  }
+
+  async getConsultationsByDoctor(doctorId: number): Promise<ConsultationWithPatient[]> {
+    const results = await db
+      .select({
+        consultation: consultations,
+        patient: patients
+      })
+      .from(consultations)
+      .innerJoin(patients, eq(consultations.patientId, patients.id))
+      .where(eq(consultations.doctorId, doctorId))
       .orderBy(consultations.date, consultations.time);
 
     return results.map(result => ({
@@ -306,6 +340,32 @@ export class DatabaseStorage implements IStorage {
     
     const todayConsultations = await db.select().from(consultations).where(eq(consultations.date, today));
     const totalSummaries = await db.select().from(aiSummaries);
+
+    return {
+      todayConsultations: todayConsultations.length,
+      waitingPatients: todayConsultations.filter(c => c.status === 'scheduled').length,
+      completedConsultations: todayConsultations.filter(c => c.status === 'completed').length,
+      aiSummaries: totalSummaries.length,
+    };
+  }
+
+  async getDashboardStatsByDoctor(doctorId: number): Promise<{
+    todayConsultations: number;
+    waitingPatients: number;
+    completedConsultations: number;
+    aiSummaries: number;
+  }> {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const todayConsultations = await db
+      .select()
+      .from(consultations)
+      .where(and(eq(consultations.date, today), eq(consultations.doctorId, doctorId)));
+    
+    const totalSummaries = await db
+      .select()
+      .from(aiSummaries)
+      .where(eq(aiSummaries.doctorId, doctorId));
 
     return {
       todayConsultations: todayConsultations.length,
