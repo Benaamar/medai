@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-
-# Disallow sensitive directories
-Disallow: /assets/maps/
-Disallow: /.well-known/
-
-# Sitemap location (update with your actual domain)
-# Sitemap: https://yourdomain.com/sitemap.xml 
