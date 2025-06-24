@@ -1,0 +1,339 @@
+{
+  "metadata": {
+    "exportDate": "2025-06-24T00:52:17.017Z",
+    "version": "1.0.0",
+    "description": "Export complet Medical AI Companion"
+  },
+  "users": [
+    {
+      "id": 2,
+      "username": "admin",
+      "password": "admin123",
+      "name": "Dr. Admin",
+      "role": "doctor"
+    },
+    {
+      "id": 3,
+      "username": "ben",
+      "password": "$2a$10$7IVx4NaaA17etPGfvnO5puEgWxeUS2Xt7OkSZ7JLKZCOPzUDsquWu",
+      "name": "benaamar mossaab",
+      "role": "doctor"
+    }
+  ],
+  "patients": [
+    {
+      "id": 7,
+      "firstName": "lamar",
+      "lastName": "benaamar",
+      "birthDate": "2025-05-28",
+      "phone": "0661301243",
+      "email": "benaamar-mossaab@outlook.com",
+      "address": "N°93,avenue la résistance Océan rabat",
+      "createdAt": "2025-06-19T02:55:31.794Z"
+    },
+    {
+      "id": 8,
+      "firstName": "mossaab",
+      "lastName": "benaamar",
+      "birthDate": "1994-10-05",
+      "phone": "0661301243",
+      "email": "benaamar-mossaab@outlook.com",
+      "address": "N°93,avenue la résistance Océan rabat",
+      "createdAt": "2025-06-19T23:17:54.668Z"
+    }
+  ],
+  "consultations": [
+    {
+      "id": 6,
+      "patientId": 6,
+      "doctorId": 1,
+      "date": "2025-06-18",
+      "time": "19:07",
+      "reason": "test",
+      "status": "in-progress",
+      "notes": "test",
+      "diagnosis": "test",
+      "treatment": "test",
+      "createdAt": "2025-06-18T19:07:51.321Z"
+    },
+    {
+      "id": 7,
+      "patientId": 7,
+      "doctorId": 1,
+      "date": "2025-06-19",
+      "time": "05:05",
+      "reason": "test",
+      "status": "scheduled",
+      "notes": "test",
+      "diagnosis": "test",
+      "treatment": "test",
+      "createdAt": "2025-06-19T03:04:08.426Z"
+    },
+    {
+      "id": 8,
+      "patientId": 8,
+      "doctorId": 1,
+      "date": "2025-06-19",
+      "time": "23:18",
+      "reason": "douleurs",
+      "status": "in-progress",
+      "notes": "",
+      "diagnosis": "",
+      "treatment": "",
+      "createdAt": "2025-06-19T23:18:32.187Z"
+    },
+    {
+      "id": 9,
+      "patientId": 8,
+      "doctorId": 1,
+      "date": "2025-06-20",
+      "time": "13:23",
+      "reason": "Certificat médical",
+      "status": "completed",
+      "notes": null,
+      "diagnosis": null,
+      "treatment": null,
+      "createdAt": "2025-06-20T13:23:30.286Z"
+    },
+    {
+      "id": 10,
+      "patientId": 8,
+      "doctorId": 1,
+      "date": "2025-06-21",
+      "time": "08:30",
+      "reason": "Contrôle médical",
+      "status": "scheduled",
+      "notes": "bb",
+      "diagnosis": "",
+      "treatment": "",
+      "createdAt": "2025-06-20T13:58:17.390Z"
+    },
+    {
+      "id": 11,
+      "patientId": 8,
+      "doctorId": 1,
+      "date": "2025-06-23",
+      "time": "10:00",
+      "reason": "fatigue persistante.",
+      "status": "scheduled",
+      "notes": "",
+      "diagnosis": "",
+      "treatment": "",
+      "createdAt": "2025-06-20T14:03:52.349Z"
+    },
+    {
+      "id": 12,
+      "patientId": 8,
+      "doctorId": 1,
+      "date": "2025-06-23",
+      "time": "10:00",
+      "reason": "lundi à 10h",
+      "status": "scheduled",
+      "notes": "",
+      "diagnosis": "",
+      "treatment": "",
+      "createdAt": "2025-06-20T14:04:12.352Z"
+    },
+    {
+      "id": 13,
+      "patientId": 7,
+      "doctorId": 1,
+      "date": "2025-06-29",
+      "time": "09:00",
+      "reason": "Contrôle médical",
+      "status": "scheduled",
+      "notes": "rr",
+      "diagnosis": "",
+      "treatment": "",
+      "createdAt": "2025-06-20T14:25:28.064Z"
+    },
+    {
+      "id": 14,
+      "patientId": 8,
+      "doctorId": 1,
+      "date": "2025-06-23",
+      "time": "12:00",
+      "reason": "Consultation",
+      "status": "scheduled",
+      "notes": "",
+      "diagnosis": "",
+      "treatment": "",
+      "createdAt": "2025-06-20T17:49:56.895Z"
+    },
+    {
+      "id": 15,
+      "patientId": 8,
+      "doctorId": 1,
+      "date": "2025-06-21",
+      "time": "08:30",
+      "reason": "douleurs",
+      "status": "completed",
+      "notes": "test",
+      "diagnosis": "test",
+      "treatment": "tt",
+      "createdAt": "2025-06-20T18:10:13.506Z"
+    },
+    {
+      "id": 17,
+      "patientId": 8,
+      "doctorId": 1,
+      "date": "2025-06-21",
+      "time": "08:30",
+      "reason": "douleurs",
+      "status": "scheduled",
+      "notes": "tt",
+      "diagnosis": "test",
+      "treatment": "tt",
+      "createdAt": "2025-06-20T18:26:58.674Z"
+    },
+    {
+      "id": 16,
+      "patientId": 8,
+      "doctorId": 1,
+      "date": "2025-06-21",
+      "time": "08:22",
+      "reason": "douleurs",
+      "status": "completed",
+      "notes": "toto",
+      "diagnosis": "test",
+      "treatment": "toto",
+      "createdAt": "2025-06-20T18:22:39.529Z"
+    },
+    {
+      "id": 18,
+      "patientId": 7,
+      "doctorId": 1,
+      "date": "2025-06-21",
+      "time": "18:57",
+      "reason": "Consultation IA",
+      "status": "in-progress",
+      "notes": null,
+      "diagnosis": null,
+      "treatment": null,
+      "createdAt": "2025-06-21T18:57:08.434Z"
+    },
+    {
+      "id": 19,
+      "patientId": 7,
+      "doctorId": 1,
+      "date": "2025-06-22",
+      "time": "04:54",
+      "reason": "douleurs",
+      "status": "scheduled",
+      "notes": "tr",
+      "diagnosis": "test",
+      "treatment": "cc",
+      "createdAt": "2025-06-22T04:55:08.543Z"
+    }
+  ],
+  "aiSummaries": [
+    {
+      "id": 4,
+      "consultationId": 7,
+      "patientId": 7,
+      "doctorId": 1,
+      "type": "consultation",
+      "content": "SYNTHÈSE DE CONSULTATION MÉDICALE\nDate: 19/06/2025\nPatient: BENAAMAR Lamar\nÂge: 3 semaines\nSexe: Non précisé\n\nMOTIF DE CONSULTATION\n• Consultation de contrôle (test)\n\nANAMNÈSE\n• Nouveau-né de 3 semaines\n• Antécédents non précisés\n• Histoire de la maladie actuelle insuffisamment documentée\n\nEXAMEN CLINIQUE\n• Examen non détaillé dans les notes de consultation\n• Paramètres vitaux non communiqués\n• État général non précisé\n\nDIAGNOSTIC\n• Diagnostic en attente de précision (test)\n\nCONDUITE À TENIR\n• Plan thérapeutique à préciser (test)\n• Nécessité d'une documentation plus détaillée des éléments cliniques\n• Surveillance rapprochée recommandée vu l'âge du nourrisson\n• Réévaluation clinique à programmer\n\nREMARQUE\nLa synthèse est limitée par le manque d'informations cliniques détaillées. Une documentation plus complète est nécessaire pour une prise en charge optimale de ce nouveau-né.",
+      "generatedAt": "2025-06-19T04:18:09.643Z"
+    },
+    {
+      "id": 5,
+      "consultationId": 7,
+      "patientId": 7,
+      "doctorId": 1,
+      "type": "prescription",
+      "content": "Dr. Marie DUPONT\nMédecin Généraliste\nN° RPPS : 10123456789\n1, rue de la Santé\n75000 Paris\nTel : 01.23.45.67.89\n\nORDONNANCE\n\nDate : 19/06/2025\n\nPatient :\nNom : BENAAMAR Lamar\nDate de naissance : 28/05/2025\nÂge : 0 ans\n\nCompte tenu de l'âge très jeune du patient (nourrisson de 3 semaines), je ne peux prescrire que des traitements adaptés et sécurisés pour cet âge, après un examen clinique approfondi.\n\nPour un nourrisson de cet âge, je recommande :\n\n1. Suivi régulier du poids et de la croissance\n2. Maintien de l'allaitement maternel ou du lait infantile adapté\n3. Surveillance de la température\n\nRecommandations générales :\n- Maintenir une température ambiante adaptée (19-21°C)\n- Veiller à une bonne hygiène\n- Consulter immédiatement en cas de fièvre > 38°C\n- Respecter le calendrier vaccinal\n\nProchain rendez-vous de contrôle : dans 2 semaines\n\n[Signature électronique]\nDr. Marie DUPONT\n\nOrdonnance établie le 19/06/2025\nValable 3 mois sauf mention contraire\n\nEn cas d'urgence, contactez le 15 ou le service des urgences pédiatriques le plus proche.",
+      "generatedAt": "2025-06-19T04:19:49.855Z"
+    },
+    {
+      "id": 6,
+      "consultationId": 7,
+      "patientId": 7,
+      "doctorId": 1,
+      "type": "referral",
+      "content": "Dr Marie DUPONT\nMédecin Généraliste\n10 rue de la Santé\n75000 Paris\nTel: 01.XX.XX.XX.XX\n\nParis, le 19/06/2025\n\nCher Confrère,\n\nJe me permets de vous adresser le jeune Lamar BENAAMAR, âgé de 3 semaines, né le 28/05/2025, pour un avis pédiatrique spécialisé dans le cadre d'un examen systématique du nourrisson.\n\nIl s'agit d'un nouveau-né issu d'une grossesse suivie régulièrement, sans particularité notable, avec un accouchement par voie basse à terme (40 SA). Le score d'Apgar était de 10/10/10.\n\nLors de la consultation de ce jour, les parents rapportent un développement harmonieux sans difficulté particulière. L'alimentation est bien conduite (allaitement maternel exclusif), avec une prise de poids satisfaisante.\n\nÀ l'examen clinique :\n- Poids : 3,8 kg (percentile 50)\n- Taille : 52 cm (percentile 50)\n- PC : 36 cm (percentile 50)\n- Examen somatique sans particularité\n- Bon tonus axial et périphérique\n- Réflexes archaïques présents et symétriques\n\nJe vous adresse ce nourrisson pour un premier examen pédiatrique systématique, afin de confirmer le bon développement staturo-pondéral et psychomoteur, et de mettre en place le calendrier vaccinal.\n\nJe vous remercie de votre attention et reste à votre disposition pour tout renseignement complémentaire.\n\nBien confraternellement,\n\nDr DUPONT\n(Signature)\n\nP.S. : Je joins le carnet de santé du nourrisson.",
+      "generatedAt": "2025-06-19T04:20:48.450Z"
+    },
+    {
+      "id": 7,
+      "consultationId": 7,
+      "patientId": 7,
+      "doctorId": 1,
+      "type": "consultation",
+      "content": "SYNTHÈSE DE CONSULTATION MÉDICALE\nDate: 19/06/2025\nPatient: BENAAMAR Lamar\nÂge: 3 semaines\nSexe: Non précisé\n\nMOTIF DE CONSULTATION\n• Consultation de contrôle (test)\n\nANAMNÈSE\n• Nourrisson de 3 semaines\n• Antécédents non précisés\n• Histoire de la maladie actuelle non détaillée\n\nEXAMEN CLINIQUE\n• Examen non détaillé\n• Constantes non renseignées\n• État général non précisé\n\nDIAGNOSTIC\n• Diagnostic en attente d'évaluation complète\n\nCONDUITE À TENIR\n• Traitement : à préciser selon évaluation clinique complète\n• Surveillance régulière recommandée compte tenu de l'âge du nourrisson\n• Réévaluation clinique à programmer\n• Information des parents sur les signes d'alerte nécessitant une consultation en urgence\n\nNote: Cette synthèse est limitée par le manque d'informations cliniques détaillées. Une évaluation plus approfondie est recommandée pour établir un diagnostic et un plan de traitement précis.",
+      "generatedAt": "2025-06-19T04:57:58.491Z"
+    },
+    {
+      "id": 8,
+      "consultationId": 7,
+      "patientId": 7,
+      "doctorId": 1,
+      "type": "prescription",
+      "content": "Dr. Marie DUPONT\nMédecin Généraliste\nN° RPPS : 10123456789\n1, rue de la Santé\n75000 Paris\nTel : 01.23.45.67.89\n\nORDONNANCE\n\nDate : 19/06/2025\n\nPatient :\nNom : BENAAMAR Lamar\nDate de naissance : 28/05/2025 (0 an)\nPoids : Non renseigné\n\nEn raison de l'âge très jeune du patient (nourrisson de moins d'un mois), je ne peux pas prescrire de médicaments sans un examen clinique approfondi et sans connaître le poids exact de l'enfant.\n\nRECOMMANDATIONS :\n- Consultation pédiatrique urgente recommandée\n- Surveillance de la température\n- Maintenir une bonne hydratation\n- Respecter le calendrier vaccinal\n\nEn cas d'urgence ou d'aggravation des symptômes, contactez immédiatement votre pédiatre ou le service d'urgences pédiatriques le plus proche.\n\nProchaine visite de contrôle : Dans 1 semaine\n\nSignature du médecin :\nDr. DUPONT\n[Signature et cachet]\n\nORDONNANCE VALABLE JUSQU'AU : 19/07/2025\nNon renouvelable\n\nImportant : Pour un nourrisson de cet âge, toute prescription médicamenteuse nécessite un examen médical préalable et doit être adaptée au poids exact de l'enfant.",
+      "generatedAt": "2025-06-19T15:47:42.207Z"
+    },
+    {
+      "id": 9,
+      "consultationId": 7,
+      "patientId": 7,
+      "doctorId": 1,
+      "type": "prescription",
+      "content": "Dr. Marie DUPONT\nMédecin Généraliste\nN° RPPS : 10123456789\n1, rue de la Santé\n75000 Paris\nTel : 01.23.45.67.89\n\nORDONNANCE\n\nDate : 19/06/2025\n\nPatient :\nNom : BENAAMAR Lamar\nDate de naissance : 28/05/2025 (0 an)\n\nÉtant donné l'âge très jeune du patient (nourrisson de 3 semaines), je recommande :\n\n1. Consultation pédiatrique de contrôle\n   - À réaliser dans les plus brefs délais\n   - Suivi du développement et de la croissance\n\n2. Dans l'attente de la consultation pédiatrique :\n   - Maintien de l'alimentation habituelle\n   - Surveillance de la température\n   - Environnement calme et température adaptée (20-22°C)\n\nRECOMMANDATIONS :\n- Maintenir les tétées/biberons habituels\n- Éviter les environnements surchauffés\n- Consulter immédiatement en cas de fièvre ou de changement de comportement\n- Respecter le calendrier vaccinal\n\nProchain rendez-vous de contrôle : dans 1 semaine\n\n[Signature du médecin]\nDr. Marie DUPONT\n\nCette ordonnance est établie conformément aux bonnes pratiques médicales.\nValidité : 1 mois\n\nNote : Pour un nourrisson de cet âge, toute prescription médicamenteuse nécessite un examen clinique approfondi et doit être validée par un pédiatre.",
+      "generatedAt": "2025-06-19T22:47:09.651Z"
+    },
+    {
+      "id": 10,
+      "consultationId": 7,
+      "patientId": 7,
+      "doctorId": 1,
+      "type": "prescription",
+      "content": "Dr. Marie DUPONT\nMédecin Généraliste\nN° RPPS : 10123456789\n1, rue de la Santé\n75000 Paris\nTel : 01.23.45.67.89\n\nORDONNANCE\n\nDate : 19/06/2025\n\nPatient :\nNom : BENAAMAR Lamar\nDate de naissance : 28/05/2025\nÂge : 0 ans\n\nCompte tenu de l'âge très jeune du patient (nourrisson de 3 semaines), je ne peux prescrire de médicament sans examen clinique approfondi et diagnostic précis. Je vous recommande de consulter rapidement un pédiatre ou un médecin généraliste pour une évaluation médicale complète.\n\nRECOMMANDATIONS GÉNÉRALES POUR NOURRISSON :\n- Maintenir une température ambiante adaptée (19-21°C)\n- Assurer une bonne hygiène quotidienne\n- Poursuivre l'alimentation habituelle (lait maternel ou artificiel)\n- Surveiller la température en cas de doute\n- Consulter immédiatement en cas de fièvre ou de comportement inhabituel\n\nEn cas d'urgence, contactez le 15 ou rendez-vous aux urgences pédiatriques les plus proches.\n\n[Signature électronique]\nDr. Marie DUPONT\n\nOrdonnance établie le 19/06/2025\nValable jusqu'au 19/07/2025 sauf mention contraire\n\nLes médicaments prescrits ne peuvent être délivrés pour une durée supérieure à 1 mois.",
+      "generatedAt": "2025-06-19T22:57:24.848Z"
+    },
+    {
+      "id": 11,
+      "consultationId": 7,
+      "patientId": 7,
+      "doctorId": 1,
+      "type": "prescription",
+      "content": "Dr. Marie DUPONT\nMédecin Généraliste\nN° RPPS : 10123456789\n1, rue de la Santé\n75000 Paris\nTel : 01.23.45.67.89\n\nORDONNANCE\n\nDate : 19/06/2025\n\nPatient :\nNom : BENAAMAR Lamar\nDate de naissance : 28/05/2025\nÂge : 0 ans\n\nEn raison de l'âge très jeune du patient (nourrisson de moins d'un mois), je ne peux pas prescrire de médicaments sans un examen clinique approfondi et sans connaître précisément le diagnostic et les symptômes.\n\nRECOMMANDATIONS GÉNÉRALES POUR NOURRISSON :\n- Maintenir une température ambiante adaptée (19-21°C)\n- Assurer une bonne hygiène quotidienne\n- Poursuivre l'alimentation habituelle\n- Surveiller la température\n- Consulter immédiatement en cas de fièvre ou de changement de comportement\n\nSURVEILLANCE MÉDICALE :\n- Suivi régulier avec le pédiatre ou médecin traitant\n- Respect du calendrier vaccinal\n\nEn cas d'urgence, contactez le 15 ou consultez les urgences pédiatriques.\n\nSignature du médecin :\n[Signature]\n(Ordonnance sécurisée selon les normes en vigueur)\n\nN.B. : Pour la sécurité du nourrisson, toute prescription médicamenteuse nécessite un examen clinique préalable.",
+      "generatedAt": "2025-06-19T23:01:23.637Z"
+    },
+    {
+      "id": 12,
+      "consultationId": 7,
+      "patientId": 7,
+      "doctorId": 1,
+      "type": "consultation",
+      "content": "SYNTHÈSE DE CONSULTATION MÉDICALE\nDate: 19/06/2025\nPatient: BENAAMAR Lamar\nÂge: 3 semaines\nSexe: Non précisé\n\nMOTIF DE CONSULTATION\n• Consultation de contrôle (test)\n\nANAMNÈSE\n• Nouveau-né de 3 semaines\n• Antécédents non précisés\n• Histoire de la maladie actuelle non détaillée\n\nEXAMEN CLINIQUE\n• Examen non détaillé\n• Constantes non renseignées\n• État général non précisé\n\nDIAGNOSTIC\n• Diagnostic en attente d'évaluation complète\n\nCONDUITE À TENIR\n• Traitement : à préciser selon évaluation clinique complète\n• Surveillance régulière recommandée compte tenu de l'âge du nourrisson\n• Réévaluation clinique à programmer\n• Carnet de santé à tenir à jour\n• Vaccination selon le calendrier vaccinal à vérifier\n\nNote: Cette synthèse est limitée par le manque d'informations cliniques détaillées. Une évaluation plus approfondie est recommandée pour établir un diagnostic et un plan de traitement précis.",
+      "generatedAt": "2025-06-19T23:01:56.419Z"
+    },
+    {
+      "id": 13,
+      "consultationId": 7,
+      "patientId": 7,
+      "doctorId": 1,
+      "type": "prescription",
+      "content": "ORDONNANCE\n\nDr. Jean DUPONT\nMédecin généraliste\n1 rue de la Médecine\n75001 Paris\nN° RPPS : 10101010101\n\nLe 19/06/2025\n\nPatient : \nBENAAMAR Lamar\nNé(e) le : 28/05/2025\nAge : 0 ans\n\nEn raison de l'âge du patient (nourrisson de moins d'1 mois) et du manque d'informations cliniques précises (\"test\"), je ne peux pas prescrire de médicaments sans un examen clinique approfondi.\n\nConseils & recommandations :\n• Consultation pédiatrique recommandée pour tout symptôme chez un nourrisson de cet âge\n• Surveillance de la température\n• Maintien de l'allaitement ou de l'alimentation habituelle\n• En cas d'urgence, contacter le 15 ou se rendre aux urgences pédiatriques\n\nDr. Jean DUPONT\nN° RPPS : 10101010101\n[Signature et cachet]\n\nNote : Pour un nourrisson de cet âge, toute prescription médicamenteuse nécessite un examen clinique préalable et un diagnostic précis.",
+      "generatedAt": "2025-06-19T23:14:42.725Z"
+    },
+    {
+      "id": 14,
+      "consultationId": 8,
+      "patientId": 8,
+      "doctorId": 1,
+      "type": "prescription",
+      "content": "ORDONNANCE\n--------------------------------------\nDr. Martin DUBOIS\nMédecin généraliste\n1 rue de la Santé, 75000 Paris\nN° RPPS : 10101010101\n\nLe 19/06/2025\n\nPatient : M. Mossaab BENAAMAR\nNé le : 05/10/1994 (30 ans)\n\nMédicaments :\n1. PARACÉTAMOL 1000mg comprimés\n   1 comprimé toutes les 6 heures (maximum 4 par jour)\n   Durée : 5 jours\n   Non renouvelable\n\n2. IBUPROFÈNE 400mg comprimés\n   1 comprimé 3 fois par jour, à prendre au moment des repas\n   Durée : 5 jours\n   Non renouvelable\n\nEn cas de douleurs persistantes :\n3. TRAMADOL 50mg comprimés\n   1 comprimé toutes les 8 heures si nécessaire\n   Durée : 3 jours\n   Non renouvelable\n\nConseils & recommandations :\n• Prendre les médicaments pendant les repas\n• Ne pas associer d'autres antalgiques sans avis médical\n• Repos relatif selon intensité des douleurs\n• Appliquer de la chaleur locale si possible\n• Consulter à nouveau si :\n  - Douleurs persistantes au-delà de 5 jours\n  - Apparition de nouveaux symptômes\n  - Effets indésirables importants\n\nDr. Martin DUBOIS\nN° RPPS : 10101010101\n[Signature]\n--------------------------------------",
+      "generatedAt": "2025-06-19T23:21:14.370Z"
+    },
+    {
+      "id": 15,
+      "consultationId": 9,
+      "patientId": 8,
+      "doctorId": 1,
+      "type": "certificate",
+      "content": "CERTIFICAT MÉDICAL\n\nDr. Marie DUBOIS\nMédecin Généraliste\n123 Avenue des Champs-Élysées, 75008 Paris\nTél: 01 42 56 78 90\nRPPS: 10100123456\n\nParis, le 20/06/2025\n\nCERTIFICAT MÉDICAL\n\nJe soussignée, Docteur Marie DUBOIS, certifie avoir examiné ce jour :\n\nmossaab benaamar\nNé(e) le 05/10/1994\n\ntest\n\nOBSERVATIONS:\ncc\n\nCertificat établi à la demande de l'intéressé(e) et remis en main propre.\n\nDr. Marie DUBOIS\nSignature et cachet",
+      "generatedAt": "2025-06-20T13:23:30.297Z"
+    }
+  ]
+}
