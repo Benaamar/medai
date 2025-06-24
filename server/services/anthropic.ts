@@ -6,7 +6,11 @@ import { config } from 'dotenv';
 config();
 
 // Clé API Anthropic - utiliser la variable d'environnement
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "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";
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+
+if (!ANTHROPIC_API_KEY) {
+  throw new Error('ANTHROPIC_API_KEY environment variable is required');
+}
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_MODEL = "claude-3-5-sonnet-20241022";
 
