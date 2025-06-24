@@ -98,9 +98,11 @@ Medical AI Companion is a comprehensive medical practice management system that 
 
 ## Changelog
 
+- June 24, 2025. Implemented complete data isolation by doctor - each doctor now sees only their own patients, consultations, and AI summaries through JWT authentication and database filtering
 - June 24, 2025. Corrected login redirection issue by adding query invalidation after authentication
 - June 23, 2025. Initial setup
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Data storage: All data must be stored in PostgreSQL database, not localStorage.

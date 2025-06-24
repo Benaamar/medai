@@ -251,40 +251,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/ai-summaries/:id", async (req, res) => {
+  app.get("/api/ai-summaries/:id", authMiddleware, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const summary = await storage.getAiSummaryWithDetails(id);
       if (!summary) {
         return res.status(404).json({ message: "AI summary not found" });
       }
+      
+      // Vérifier que le résumé appartient au docteur connecté
+      if (summary.doctorId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
       res.json(summary);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch AI summary" });
     }
   });
 
-  app.patch("/api/ai-summaries/:id", async (req, res) => {
+  app.patch("/api/ai-summaries/:id", authMiddleware, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const updates = req.body;
-      const summary = await storage.updateAiSummary(id, updates);
+      const summary = await storage.getAiSummary(id);
       if (!summary) {
         return res.status(404).json({ message: "AI summary not found" });
       }
-      res.json(summary);
+      
+      // Vérifier que le résumé appartient au docteur connecté
+      if (summary.doctorId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const updates = req.body;
+      const updatedSummary = await storage.updateAiSummary(id, updates);
+      res.json(updatedSummary);
     } catch (error) {
       res.status(500).json({ message: "Failed to update AI summary" });
     }
   });
 
-  app.delete("/api/ai-summaries/:id", async (req, res) => {
+  app.delete("/api/ai-summaries/:id", authMiddleware, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteAiSummary(id);
-      if (!success) {
+      const summary = await storage.getAiSummary(id);
+      if (!summary) {
         return res.status(404).json({ message: "AI summary not found" });
       }
+      
+      // Vérifier que le résumé appartient au docteur connecté
+      if (summary.doctorId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const success = await storage.deleteAiSummary(id);
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete AI summary" });
@@ -292,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Chat with AI assistant
-  app.post("/api/ai-assistant/chat", async (req, res) => {
+  app.post("/api/ai-assistant/chat", authMiddleware, async (req: any, res) => {
     try {
       const { consultationId, message, messageHistory } = req.body;
       
@@ -305,6 +325,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Consultation not found" });
       }
 
+      // Vérifier que la consultation appartient au docteur connecté
+      if (consultation.doctorId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
       const patient = await storage.getPatient(consultation.patientId);
       if (!patient) {
         return res.status(404).json({ message: "Patient not found" });
@@ -315,6 +340,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get previous AI summaries for context
       const previousSummaries = await storage.getAiSummariesByPatient(patient.id);
+      // Filtrer par docteur
+      const filteredSummaries = previousSummaries.filter(s => s.doctorId === req.user.id);
       
       // Process the chat message with Anthropic
       const consultationWithPatient = { ...consultation, patient };
@@ -506,7 +533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/ai-summaries/generate", async (req, res) => {
+  app.post("/api/ai-summaries/generate", authMiddleware, async (req: any, res) => {
     try {
       const { consultationId, summaryType } = req.body;
       
@@ -526,6 +553,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!consultation) {
         console.error('❌ Consultation non trouvée:', consultationId);
         return res.status(404).json({ message: "Consultation not found" });
+      }
+
+      // Vérifier que la consultation appartient au docteur connecté
+      if (consultation.doctorId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
       }
 
       const patient = await storage.getPatient(consultation.patientId);
