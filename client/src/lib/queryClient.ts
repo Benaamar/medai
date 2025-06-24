@@ -15,9 +15,16 @@ export async function apiRequest(
 ): Promise<Response> {
   console.log(`Requête API: ${method} ${url}`);
   try {
+    const token = localStorage.getItem("token");
+    const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
+    
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    
     const res = await fetch(url, {
       method,
-      headers: data ? { "Content-Type": "application/json" } : {},
+      headers,
       body: data ? JSON.stringify(data) : undefined,
       credentials: "include",
     });
@@ -38,7 +45,15 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     console.log(`Exécution de la requête avec QueryKey:`, queryKey);
+    const token = localStorage.getItem("token");
+    const headers: Record<string, string> = {};
+    
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    
     const res = await fetch(queryKey[0] as string, {
+      headers,
       credentials: "include",
     });
 

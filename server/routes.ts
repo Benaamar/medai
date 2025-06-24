@@ -57,9 +57,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard stats
-  app.get("/api/dashboard/stats", async (req, res) => {
+  app.get("/api/dashboard/stats", authMiddleware, async (req: any, res) => {
     try {
-      const stats = await storage.getDashboardStats();
+      const stats = await storage.getDashboardStatsByDoctor(req.user.id);
       res.json(stats);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch dashboard stats" });
@@ -67,9 +67,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Patients routes
-  app.get("/api/patients", async (req, res) => {
+  app.get("/api/patients", authMiddleware, async (req: any, res) => {
     try {
-      const patients = await storage.getAllPatients();
+      const patients = await storage.getPatientsByDoctor(req.user.id);
       res.json(patients);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch patients" });
@@ -153,10 +153,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/consultations", async (req, res) => {
+  app.post("/api/consultations", authMiddleware, async (req: any, res) => {
     try {
-      const consultationData = insertConsultationSchema.parse(req.body);
-      const consultation = await storage.createConsultation(consultationData);
+      const consultationData = {
+        ...req.body,
+        doctorId: req.user.id // Forcer l'ID du docteur connecté
+      };
+      const validatedData = insertConsultationSchema.parse(consultationData);
+      const consultation = await storage.createConsultation(validatedData);
       res.status(201).json(consultation);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -193,17 +197,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/consultations", async (req, res) => {
+  app.get("/api/consultations", authMiddleware, async (req: any, res) => {
     try {
       const { date, patientId } = req.query;
       let consultations;
       
       if (date) {
         consultations = await storage.getConsultationsByDate(date as string);
+        // Filtrer par docteur
+        consultations = consultations.filter(c => c.doctorId === req.user.id);
       } else if (patientId) {
         consultations = await storage.getConsultationsByPatient(parseInt(patientId as string));
+        // Filtrer par docteur
+        consultations = consultations.filter(c => c.doctorId === req.user.id);
       } else {
-        consultations = await storage.getAllConsultations();
+        consultations = await storage.getConsultationsByDoctor(req.user.id);
       }
       
       res.json(consultations);
@@ -213,10 +221,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Summaries routes
-  app.get("/api/ai-summaries/recent", async (req, res) => {
+  app.get("/api/ai-summaries/recent", authMiddleware, async (req: any, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-      const summaries = await storage.getRecentAiSummaries(limit);
+      const summaries = await storage.getRecentAiSummariesByDoctor(req.user.id, limit);
       res.json(summaries);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch recent AI summaries" });
@@ -224,16 +232,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get AI summaries by patient ID
-  app.get("/api/ai-summaries", async (req, res) => {
+  app.get("/api/ai-summaries", authMiddleware, async (req: any, res) => {
     try {
       const { patientId } = req.query;
       
       if (patientId) {
         const summaries = await storage.getAiSummariesByPatient(parseInt(patientId as string));
-        res.json(summaries);
+        // Filtrer par docteur
+        const filteredSummaries = summaries.filter(s => s.doctorId === req.user.id);
+        res.json(filteredSummaries);
       } else {
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-        const summaries = await storage.getRecentAiSummaries(limit);
+        const summaries = await storage.getRecentAiSummariesByDoctor(req.user.id, limit);
         res.json(summaries);
       }
     } catch (error) {
@@ -829,12 +839,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Appointments routes (alias de consultations "scheduled")
-  app.get("/api/appointments/upcoming", async (req, res) => {
+  app.get("/api/appointments/upcoming", authMiddleware, async (req: any, res) => {
     try {
       const now = new Date();
       const todayStr = now.toISOString().split("T")[0];
       const currentTime = now.toTimeString().slice(0,5); // HH:MM
-      const results = await storage.getAllConsultations();
+      const results = await storage.getConsultationsByDoctor(req.user.id);
       const upcoming = results.filter(c => {
         if (c.status !== "scheduled") return false;
         if (c.date > todayStr) return true;
@@ -849,7 +859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/appointments", async (req, res) => {
+  app.post("/api/appointments", authMiddleware, async (req: any, res) => {
     try {
       const data = req.body;
       if (!data.patientId || !data.date || !data.time || !data.reason) {
@@ -857,7 +867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const appointment = await storage.createConsultation({
         patientId: data.patientId,
-        doctorId: data.doctorId ?? 1,
+        doctorId: req.user.id, // Utiliser l'ID du docteur connecté
         date: data.date,
         time: data.time,
         reason: data.reason,

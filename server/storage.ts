@@ -6,7 +6,7 @@ import {
   type AiSummary, type InsertAiSummary, type AiSummaryWithDetails
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -20,6 +20,7 @@ export interface IStorage {
   // Patient methods
   getPatient(id: number): Promise<Patient | undefined>;
   getAllPatients(): Promise<Patient[]>;
+  getPatientsByDoctor(doctorId: number): Promise<Patient[]>;
   createPatient(patient: InsertPatient): Promise<Patient>;
   updatePatient(id: number, patient: Partial<InsertPatient>): Promise<Patient | undefined>;
   deletePatient(id: number): Promise<boolean>;
@@ -27,6 +28,7 @@ export interface IStorage {
   // Consultation methods
   getConsultation(id: number): Promise<Consultation | undefined>;
   getAllConsultations(): Promise<ConsultationWithPatient[]>;
+  getConsultationsByDoctor(doctorId: number): Promise<ConsultationWithPatient[]>;
   getConsultationsByDate(date: string): Promise<ConsultationWithPatient[]>;
   getConsultationsByPatient(patientId: number): Promise<Consultation[]>;
   getConsultationsByPatientWithDetails(patientId: number): Promise<ConsultationWithPatient[]>;
@@ -39,12 +41,19 @@ export interface IStorage {
   getAiSummaryWithDetails(id: number): Promise<AiSummaryWithDetails | undefined>;
   getAiSummariesByPatient(patientId: number): Promise<AiSummaryWithDetails[]>;
   getRecentAiSummaries(limit?: number): Promise<AiSummaryWithDetails[]>;
+  getRecentAiSummariesByDoctor(doctorId: number, limit?: number): Promise<AiSummaryWithDetails[]>;
   createAiSummary(summary: InsertAiSummary): Promise<AiSummary>;
   updateAiSummary(id: number, summary: Partial<InsertAiSummary>): Promise<AiSummary | undefined>;
   deleteAiSummary(id: number): Promise<boolean>;
 
   // Statistics
   getDashboardStats(): Promise<{
+    todayConsultations: number;
+    waitingPatients: number;
+    completedConsultations: number;
+    aiSummaries: number;
+  }>;
+  getDashboardStatsByDoctor(doctorId: number): Promise<{
     todayConsultations: number;
     waitingPatients: number;
     completedConsultations: number;
@@ -296,7 +305,28 @@ export class DatabaseStorage implements IStorage {
       .from(aiSummaries)
       .innerJoin(patients, eq(aiSummaries.patientId, patients.id))
       .innerJoin(consultations, eq(aiSummaries.consultationId, consultations.id))
-      .orderBy(aiSummaries.id)
+      .orderBy(desc(aiSummaries.generatedAt))
+      .limit(limit);
+
+    return results.map(result => ({
+      ...result.summary,
+      patient: result.patient,
+      consultation: result.consultation
+    }));
+  }
+
+  async getRecentAiSummariesByDoctor(doctorId: number, limit: number = 10): Promise<AiSummaryWithDetails[]> {
+    const results = await db
+      .select({
+        summary: aiSummaries,
+        patient: patients,
+        consultation: consultations
+      })
+      .from(aiSummaries)
+      .innerJoin(patients, eq(aiSummaries.patientId, patients.id))
+      .innerJoin(consultations, eq(aiSummaries.consultationId, consultations.id))
+      .where(eq(aiSummaries.doctorId, doctorId))
+      .orderBy(desc(aiSummaries.generatedAt))
       .limit(limit);
 
     return results.map(result => ({
