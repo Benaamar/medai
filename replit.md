@@ -98,6 +98,7 @@ Medical AI Companion is a comprehensive medical practice management system that 
 
 ## Changelog
 
+- June 24, 2025. Redesigned login and signup pages with blue gradient design matching user reference image - glass-morphism cards with fingerprint icons and modern styling
 - June 24, 2025. Enhanced UI/UX with modern gradient designs for login and signup pages, added 20-minute auto-logout functionality with session timer in header
 - June 24, 2025. Implemented complete data isolation by doctor - each doctor now sees only their own patients, consultations, and AI summaries through JWT authentication and database filtering
 - June 24, 2025. Corrected login redirection issue by adding query invalidation after authentication
