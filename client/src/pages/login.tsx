@@ -27,7 +27,7 @@ export default function Login() {
       if (!res.ok) throw new Error("Identifiants incorrects");
       const data = await res.json();
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("lastActivity", Date.now().toString());
       // Invalider le cache pour forcer la récupération des données utilisateur
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({ title: "Connecté", description: "Bienvenue " + data.user.name });

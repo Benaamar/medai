@@ -98,6 +98,7 @@ Medical AI Companion is a comprehensive medical practice management system that 
 
 ## Changelog
 
+- June 24, 2025. Enhanced UI/UX with modern gradient designs for login and signup pages, added 20-minute auto-logout functionality with session timer in header
 - June 24, 2025. Implemented complete data isolation by doctor - each doctor now sees only their own patients, consultations, and AI summaries through JWT authentication and database filtering
 - June 24, 2025. Corrected login redirection issue by adding query invalidation after authentication
 - June 23, 2025. Initial setup
@@ -106,3 +107,4 @@ Medical AI Companion is a comprehensive medical practice management system that 
 
 Preferred communication style: Simple, everyday language.
 Data storage: All data must be stored in PostgreSQL database, not localStorage.
+Design preference: Modern, attractive UI with gradients and professional medical aesthetics.

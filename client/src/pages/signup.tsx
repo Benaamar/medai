@@ -27,7 +27,7 @@ export default function Signup() {
       if (!res.ok) throw new Error("Erreur lors de l'inscription");
       const data = await res.json();
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("lastActivity", Date.now().toString());
       toast({ title: "Compte créé", description: "Bienvenue " + data.user.name });
       setLocation("/");
     } catch (error) {

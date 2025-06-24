@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { useCurrentUser } from "./hooks/use-current-user";
+import { useAutoLogout } from "./hooks/use-auto-logout";
 import Dashboard from "./pages/dashboard";
 import Patients from "./pages/patients";
 import Consultations from "./pages/consultations";
@@ -17,6 +18,9 @@ import Prescriptions from "./pages/prescriptions";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { data: user, isLoading } = useCurrentUser();
+  
+  // Utiliser le hook de déconnexion automatique
+  useAutoLogout();
   
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">

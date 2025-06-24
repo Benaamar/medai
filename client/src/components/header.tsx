@@ -1,7 +1,9 @@
-import { Stethoscope, LogOut } from "lucide-react";
+import { Stethoscope, LogOut, Clock } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
 import { useCurrentUser } from "../hooks/use-current-user";
 import NotificationsPanel from "./notifications-panel";
+import { queryClient } from "../lib/queryClient";
 
 function NavLink({ href, label }: { href: string; label: string }) {
   const [location] = useLocation();
@@ -18,22 +20,61 @@ function NavLink({ href, label }: { href: string; label: string }) {
   );
 }
 
+function SessionTimer() {
+  const [timeLeft, setTimeLeft] = useState<string>("");
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const lastActivity = localStorage.getItem("lastActivity");
+      if (!lastActivity) return;
+
+      const timeSinceLastActivity = Date.now() - parseInt(lastActivity);
+      const timeRemaining = (20 * 60 * 1000) - timeSinceLastActivity; // 20 minutes
+
+      if (timeRemaining <= 0) {
+        setTimeLeft("Session expirée");
+        return;
+      }
+
+      const minutes = Math.floor(timeRemaining / 60000);
+      const seconds = Math.floor((timeRemaining % 60000) / 1000);
+      setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!timeLeft) return null;
+
+  return (
+    <div className="flex items-center text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+      <Clock className="h-3 w-3 mr-1" />
+      {timeLeft}
+    </div>
+  );
+}
+
 export default function Header() {
   const { data: currentUser } = useCurrentUser();
   const displayName = currentUser?.name || currentUser?.username || "Invité";
   const [, navigate] = useLocation();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("lastActivity");
+    localStorage.removeItem("user");
+    queryClient.clear();
+    navigate("/login");
+  };
 
   const initials = displayName
     .split(" ")
     .slice(0, 2)
     .map((n: string) => n.charAt(0).toUpperCase())
     .join("");
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-    window.location.reload();
-  };
 
   return (
     <header className="bg-white shadow-sm border-b border-slate-200">
@@ -56,23 +97,20 @@ export default function Header() {
           </div>
           <div className="flex items-center space-x-4">
             <NotificationsPanel />
-            <div className="flex items-center space-x-3">
-              <div className="text-right">
-                <p className="text-sm font-medium text-slate-900">{displayName}</p>
-                <p className="text-xs text-slate-500">{currentUser ? "Connecté" : "Hors connexion"}</p>
+            <div className="flex items-center justify-between gap-4">
+              <SessionTimer />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-medium text-slate-600">{initials}</span>
+                </div>
+                <span className="text-sm text-slate-600">{displayName}</span>
               </div>
-              <div className="h-8 w-8 bg-medical-blue rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">{initials}</span>
-              </div>
-              {currentUser && (
-                <button
-                  onClick={handleLogout}
-                  className="text-slate-400 hover:text-slate-600"
-                  title="Se déconnecter"
-                >
-                  <LogOut className="h-5 w-5" />
+              <button
+                onClick={handleLogout}
+                className="text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
                 </button>
-              )}
             </div>
           </div>
         </div>
