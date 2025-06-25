@@ -1,9 +1,16 @@
-import { Stethoscope, LogOut, Clock } from "lucide-react";
+import { Stethoscope, LogOut, Clock, ChevronDown } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useCurrentUser } from "../hooks/use-current-user";
 import NotificationsPanel from "./notifications-panel";
 import { queryClient } from "../lib/queryClient";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 function NavLink({ href, label }: { href: string; label: string }) {
   const [location] = useLocation();
