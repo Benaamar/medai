@@ -1,5 +1,10 @@
 node_modules
-dist
+dist/*
+!dist/index.html
+!dist/.htaccess
+!dist/robots.txt
+!dist/_redirects
+!dist/assets/
 .DS_Store
 server/public
 vite.config.ts.*
