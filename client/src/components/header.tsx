@@ -104,21 +104,48 @@ export default function Header() {
           </div>
           <div className="flex items-center space-x-4">
             <NotificationsPanel />
-            <div className="flex items-center justify-between gap-4">
-              <SessionTimer />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-medium text-slate-600">{initials}</span>
-                </div>
-                <span className="text-sm text-slate-600">{displayName}</span>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="text-slate-500 hover:text-slate-700 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-medium text-white">{initials}</span>
+                  </div>
+                  <span className="text-sm text-slate-600 hidden sm:block">{displayName}</span>
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
                 </button>
-            </div>
+              </DropdownMenuTrigger>
+              
+              <DropdownMenuContent align="end" className="w-64">
+                <div className="px-3 py-3 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-white">{initials}</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-900">{displayName}</p>
+                      <p className="text-xs text-slate-500">Médecin</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="px-3 py-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <Clock className="w-4 h-4" />
+                    <span>Session: </span>
+                    <SessionTimer />
+                  </div>
+                </div>
+                
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Se déconnecter
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
